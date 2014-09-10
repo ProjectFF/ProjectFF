@@ -1,7 +1,8 @@
 ProjectFF
 =========
 
-ProjectFF stands for Project Fighting Fantasy. ;)
+ProjectFF stands for Project Fighting Fantasy.
+
 It is meant to be a "Final Fantasy" style battle 
 simualtion. 
 
