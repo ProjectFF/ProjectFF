@@ -22,6 +22,15 @@ public class MainAcrivity extends RajawaliActivity {
 		this.setRenderer(renderer);
 	
 	}
+	
+	@Override 
+	public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
+		
+		renderer.onKeyDown(keyCode, event);
+		
+		return true;
+		
+	};
 
 	@Override
     public boolean onTouchEvent(MotionEvent event) 
