@@ -1,15 +1,10 @@
 package com.projectff.main;
 
-import java.util.ArrayList;
-
 import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
-import android.content.res.Resources;
-import android.graphics.Color;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.animation.TranslateAnimation;
 import rajawali.Object3D;
 import rajawali.animation.Animation.RepeatMode;
 import rajawali.animation.EllipticalOrbitAnimation3D.OrbitDirection;
@@ -25,55 +20,44 @@ import rajawali.materials.textures.ATexture.TextureException;
 import rajawali.materials.textures.CubeMapTexture;
 import rajawali.materials.textures.NormalMapTexture;
 import rajawali.materials.textures.Texture;
-import rajawali.math.Matrix4;
 import rajawali.math.vector.Vector3;
 import rajawali.parser.Loader3DSMax;
 import rajawali.parser.ParsingException;
 import rajawali.parser.md5.LoaderMD5Anim;
 import rajawali.parser.md5.LoaderMD5Mesh;
 import rajawali.postprocessing.PostProcessingManager;
-import rajawali.postprocessing.effects.ShadowEffect;
 import rajawali.postprocessing.passes.BlendPass.BlendMode;
 import rajawali.primitives.Cube;
 import rajawali.primitives.Plane;
 import rajawali.renderer.RajawaliRenderer;
-import rajawali.util.GLU;
-import rajawali.util.ObjectColorPicker;
-import rajawali.util.OnObjectPickedListener;
 
-public class Renderer extends RajawaliRenderer implements OnObjectPickedListener {
+
+public class Renderer extends RajawaliRenderer {
 
 	private DirectionalLight mLight;
-	private DirectionalLight mLight2;
+	private PointLight mLight2;
 	Cube lcube1 = new Cube(1);
 	Cube lcube2 = new Cube(1);
 	Cube c;
 	int num = 3;
-	boolean cloudsEnabled = false;
+	boolean cloudsEnabled = true;
 	Object3D[] clouds = new Plane[num];
 	double deg = Math.PI / 180;
 	Plane ground; 
 	
-	SkeletalAnimationObject3D currentModel;
+	SkeletalAnimationObject3D currentModel, currentEnemy;
 	
 	private SkeletalAnimationObject3D mObject;
 	Plane screen;
 	float time, timer = 0;
 	private PostProcessingManager mPostProcessingManager;
-	private int[] mViewport;
-	private double[] mNearPos4;
-	private double[] mFarPos4;
-	private Vector3 mNearPos;
-	private Vector3 mFarPos;
-	private Vector3 mNewObjPos;
-	private Matrix4 mViewMatrix;
-	private Matrix4 mProjectionMatrix;
-	private ObjectColorPicker mPicker;
-	private Object3D mSelectedObject;
+	private float xd;
+	private float yd;
+	float xpos, ypos;
+	
 	
 	public Renderer(Context context) {
 		super(context);
-		// TODO Auto-generated constructor stub
 	}
 
 	public SkeletalAnimationObject3D showMonster(String Monster, Vector3 pos, Vector3 rot, Vector3 scale, int fps){
@@ -95,8 +79,7 @@ public class Renderer extends RajawaliRenderer implements OnObjectPickedListener
 			mObject.setScale(scale);
 			mObject.setFps(fps);
 			mObject.setTransparent(true);
-			mPicker.registerObject(mObject);
-
+			
 			getCurrentScene().addChild(mObject);
 			
 			return mObject;
@@ -110,7 +93,6 @@ public class Renderer extends RajawaliRenderer implements OnObjectPickedListener
 	
 	public void loadAnim2Obj(SkeletalAnimationObject3D obj, String animname, boolean loop)
 	{
-		
 		try{
 		
 		int anim = getContext().getResources().getIdentifier(animname, "raw", "com.projectff.main");
@@ -123,7 +105,7 @@ public class Renderer extends RajawaliRenderer implements OnObjectPickedListener
 			.getParsedAnimationSequence();
 		
 		obj.setAnimationSequence(sequence);
-		obj.play(loop);
+		obj.play(false);
 		} catch (ParsingException e) {
 			e.printStackTrace();
 		}
@@ -238,7 +220,7 @@ public class Renderer extends RajawaliRenderer implements OnObjectPickedListener
         	//clouds[i].setColor(0x000000 + random.nextInt(0xfffffff));
         	float scale = 5 + (float) (Math.random() * 30.f);
         	
-        	clouds[i].setPosition(-20 + Math.random()*40,3+Math.random()*10, -20 + Math.random()*10);
+        	clouds[i].setPosition(-30 + Math.random()*60,3+Math.random()*10, -20 + Math.random()*40);
         	clouds[i].setRotation(30*deg, 30*deg, Math.random() * (float) Math.PI);
         	clouds[i].setScale(scale*2,scale,0);
 
@@ -271,50 +253,53 @@ public class Renderer extends RajawaliRenderer implements OnObjectPickedListener
 		
 	}
 	
-	public void initPicking(){
+	public void btn_attack(){
 		
-		mViewport = new int[] { 0, 0, mViewportWidth, mViewportHeight };
-		mNearPos4 = new double[4];
-		mFarPos4 = new double[4];
-		mNearPos = new Vector3();
-		mFarPos = new Vector3();
-		mNewObjPos = new Vector3();
-		mViewMatrix = getCurrentCamera().getViewMatrix();
-		mProjectionMatrix = getCurrentCamera().getProjectionMatrix();
-
-		mPicker = new ObjectColorPicker(this);
-		mPicker.setOnObjectPickedListener(this);
+		Vector3 mPos = currentModel.getPosition().clone();
+		Vector3 ePos = currentEnemy.getPosition().clone();
+		ePos.y = ePos.y+1.5f;
+		ePos.x = ePos.x-3;
+		
+		TranslateAnimation3D ta = new TranslateAnimation3D(mPos, ePos);
+		ta.setRepeatMode(RepeatMode.NONE);
+		ta.setDurationMilliseconds(2000);
+		ta.setTransformable3D(currentModel);
+		getCurrentScene().registerAnimation(ta);
+		ta.play();
+		
+		loadAnim2Obj(currentModel, "squall_anim", false);
+		
+		TranslateAnimation3D ta2 = new TranslateAnimation3D(ePos,mPos);
+		ta2.setRepeatMode(RepeatMode.NONE);
+		ta2.setDurationMilliseconds(2000);
+		ta2.setTransformable3D(currentModel);
+		getCurrentScene().registerAnimation(ta2);
+		ta2.play();
+		
+		loadAnim2Obj(currentModel, "squall_stand_anim", false);
+		
 	}
 	
-	public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
-	
-		switch (event.getAction()) {
+	public void btn_magic(String kindof){
 		
-		case KeyEvent.KEYCODE_SPACE:
-			Log.d("dsfgadsgasdg", "dsagdasgdasgsdaga");
-			loadAnim2Obj(currentModel ,"squall_hit_anim", false);
-			break;
-		}
-		return true;
+	}
+	
+	public void btn_item(){
+		
 	}
 	
 	public boolean onTouch(MotionEvent event) {
-		float x = event.getX();
-		float y = event.getY();
-		
+
 		switch (event.getAction()) {
 		
 		case MotionEvent.ACTION_DOWN:
-			x = event.getX();
-			y = event.getY();
-		//	getObjectAt(x,y);
-			break;
+			xpos = event.getX();
+		    break;
 		case MotionEvent.ACTION_MOVE:
-			moveSelectedObject(x, y);
+			
+			xd = - event.getX()/8 - xpos  ;
 			break;
 		case MotionEvent.ACTION_UP:
-			stopMovingSelectedObject();
-			loadAnim2Obj(currentModel ,"squall_hit_anim", false);
 			break;
 		}
 		return true;
@@ -322,82 +307,42 @@ public class Renderer extends RajawaliRenderer implements OnObjectPickedListener
 	
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		super.onSurfaceChanged(gl, width, height);
-		mViewport[2] = mViewportWidth;
-		mViewport[3] = mViewportHeight;
-		mViewMatrix = getCurrentCamera().getViewMatrix();
-		mProjectionMatrix = getCurrentCamera().getProjectionMatrix();
 	}
 	
-	private void getObjectAt(float x, float y) {
-		mPicker.getObjectAt(x, y);
-	}
-
-	public void onObjectPicked(Object3D object)
-	{
-		mSelectedObject = object;
-	}
-	
-	private void moveSelectedObject(float x, float y) {
-
-		if (mSelectedObject == null)
-			return;
-		
-		GLU.gluUnProject(x, mViewportHeight - y, 0, mViewMatrix.getDoubleValues(), 0,
-				mProjectionMatrix.getDoubleValues(), 0, mViewport, 0, mNearPos4, 0);
-
-		GLU.gluUnProject(x, mViewportHeight - y, 1.f, mViewMatrix.getDoubleValues(), 0,
-				mProjectionMatrix.getDoubleValues(), 0, mViewport, 0, mFarPos4, 0);
-
-		mNearPos.setAll(mNearPos4[0] / mNearPos4[3], mNearPos4[1]
-				/ mNearPos4[3], mNearPos4[2] / mNearPos4[3]);
-		mFarPos.setAll(mFarPos4[0] / mFarPos4[3],
-				mFarPos4[1] / mFarPos4[3], mFarPos4[2] / mFarPos4[3]);
-
-		double factor = (Math.abs(mSelectedObject.getZ()) + mNearPos.z)
-				/ (getCurrentCamera().getFarPlane() - getCurrentCamera()
-						.getNearPlane());
-
-		mNewObjPos.setAll(mFarPos);
-		mNewObjPos.subtract(mNearPos);
-		mNewObjPos.multiply(factor);
-		mNewObjPos.add(mNearPos);
-
-		mSelectedObject.setX(mNewObjPos.x);
-		mSelectedObject.setY(mNewObjPos.y);
-	}
-	
-	private void stopMovingSelectedObject() {
-		mSelectedObject = null;
-	}
 	
 	@Override
 	protected void initScene() {
 
-		// TODO Auto-generated method stub
 		super.initScene();
-		initPicking();
 		
 		mLight = new DirectionalLight(0,1,0); // set the direction
 		mLight.setPosition(0,5,0);
 		mLight.setColor(1.0f, 1.0f, 1.0f);
 		mLight.setPower(2f);
 		
+		mLight2 = new PointLight(); // set the direction
+		mLight.setPosition(0,.1,0);
+		mLight.setColor(1.0f, 1.0f, 1.0f);
+		mLight.setPower(2f);
+		
+		
 		getCurrentScene().addLight(mLight);
-		getCurrentCamera().setY(1);
+		getCurrentCamera().setY(.1);
 		getCurrentCamera().setX(-7);
 		getCurrentCamera().setZ(7);
 		
 		//createBackground("mansion");
 		createSky("china");
-		loadScenery("china");
-		//createClouds(num);
+		createClouds(num);
 		
-		
-		SkeletalAnimationObject3D anaconda = showMonster("anaconda", new Vector3( 4,-1.5f,0), new Vector3(0,90,75), new Vector3(2));
-		loadAnim2Obj(anaconda,"anaconda_anim", true); 
+		SkeletalAnimationObject3D anaconda = showMonster("anaconda", new Vector3( 6f,-1.5f,0), new Vector3(0,90,75), new Vector3(4f));
+		anaconda.setFps(24);
+		currentEnemy = anaconda;
+		loadAnim2Obj(anaconda,"anaconda_stand_anim", true); 
 		SkeletalAnimationObject3D squall = showMonster("squall", new Vector3(-4,0,0), new Vector3(90,0,-90), new Vector3(1));
+		squall.setFps(24);
 		currentModel = squall;
-		loadAnim2Obj(squall,"squall_anim", true); 
+		loadAnim2Obj(squall,"squall_stand_anim", true); 
 		
 		mPostProcessingManager = new PostProcessingManager(this);
 
@@ -408,21 +353,20 @@ public class Renderer extends RajawaliRenderer implements OnObjectPickedListener
 
 		getCurrentCamera().setLookAt(0,0,0); 
 		
-		EllipticalOrbitAnimation3D anim = new EllipticalOrbitAnimation3D(
-				  new Vector3(0, .1, 0), 
-				  new Vector3(0, .1, 10), 0, 359);
-
-		anim.setRepeatMode(RepeatMode.INFINITE);
-		anim.setDurationMilliseconds(100000);
-		anim.setTransformable3D(getCurrentCamera());
-		getCurrentScene().registerAnimation(anim);
-		anim.play();
+//		EllipticalOrbitAnimation3D anim = new EllipticalOrbitAnimation3D(
+//				  new Vector3(0, .1, 0), 
+//				  new Vector3(0, .1, 10), 0, 359);
+//
+//		anim.setRepeatMode(RepeatMode.INFINITE);
+//		anim.setDurationMilliseconds(100000);
+//		anim.setTransformable3D(getCurrentCamera());
+//		getCurrentScene().registerAnimation(anim);
+//		anim.play();
 //		
 	}
 	
 	@Override
 	public void onDrawFrame(GL10 glUnused) {
-		// TODO Auto-generated method stub
 		super.onDrawFrame(glUnused);
 		time=0.1f;
 		timer+=0.1f;
@@ -435,15 +379,15 @@ public class Renderer extends RajawaliRenderer implements OnObjectPickedListener
 				i.setRotY(0);
 			}
 		}
-		// c.setRotY(timer);
+//		c.setRotY(timer);
 		// ground.setRotZ(timer);
+		
+		    getCurrentCamera().setRotY(xd);
 	}
 	
 	@Override
 	public void onRender(final double deltaTime) {
 		super.onRender(deltaTime);
 		mPostProcessingManager.render(deltaTime);
-		mLight.setPosition(lcube1.getPosition());
-		
 	}
 }
