@@ -55,23 +55,25 @@ public class MainAcrivity extends RajawaliActivity {
 		// mLayout.addView();
 	}
 	
-	private static ArrayList<View> getViewsByTag(ViewGroup root, String tag){
+	private static ArrayList<ImageButton> getViewsByTag(ViewGroup root, String tag){
 	    ArrayList<View> views = new ArrayList<View>();
+	    ArrayList<ImageButton> buttons = new ArrayList<ImageButton>();
 	    final int childCount = root.getChildCount();
 	    for (int i = 0; i < childCount; i++) {
-	        final View child = root.getChildAt(i);
+	    	final View child = root.getChildAt(i);
 	        if (child instanceof ViewGroup) {
 	            views.addAll(getViewsByTag((ViewGroup) child, tag));
 	        }
 
 	        final Object tagObj = child.getTag();
 	        if (tagObj != null && tagObj.equals(tag)) {
-	        	Log.d("tag", tagObj.toString());
-		        views.add(child);
+	        	Log.d("taged", tagObj.toString());
+		        buttons.add((ImageButton)child);
+		        Log.d("objects", child.toString());
 	        }
 
 	    }
-	    return views;
+	    return buttons;
 	}
 	
 	public void getButtons(){
@@ -79,12 +81,21 @@ public class MainAcrivity extends RajawaliActivity {
 		View v = findViewById(android.R.id.content);
 		ViewGroup v1 =(ViewGroup) v;
 		
-		ArrayList<View> a = getViewsByTag(v1, "btn");
-		
-		for(View v2 : a ){
+		ArrayList<ImageButton> a = getViewsByTag(v1, "Button");
+		Log.d("BTN", a.toString());
+		for(ImageButton v2 : a ){
+			
+			v2.setOnClickListener(new OnClickListener(
+					) {
+				
+				@Override
+				public void onClick(View v) {
+					Log.d("sdjfhk", "sdhljkfh");
+				}
+			});
 			
 			Log.d("child", v2.toString());
-			
+						
 		}
 				
 	}
