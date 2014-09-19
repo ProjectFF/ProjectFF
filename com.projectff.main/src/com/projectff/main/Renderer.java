@@ -3,6 +3,7 @@ package com.projectff.main;
 import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.animation.TranslateAnimation;
 import rajawali.Object3D;
@@ -40,7 +41,7 @@ public class Renderer extends RajawaliRenderer {
 	Cube lcube2 = new Cube(1);
 	Cube c;
 	int num = 3;
-	boolean cloudsEnabled = true;
+	boolean cloudsEnabled = false;
 	Object3D[] clouds = new Plane[num];
 	double deg = Math.PI / 180;
 	Plane ground; 
@@ -253,39 +254,34 @@ public class Renderer extends RajawaliRenderer {
 		
 	}
 	
-	public void btn_attack(){
+	public void setAction(String action){
 		
-		Vector3 mPos = currentModel.getPosition().clone();
-		Vector3 ePos = currentEnemy.getPosition().clone();
-		ePos.y = ePos.y+1.5f;
-		ePos.x = ePos.x-3;
+		Log.d("action", action);
 		
-		TranslateAnimation3D ta = new TranslateAnimation3D(mPos, ePos);
-		ta.setRepeatMode(RepeatMode.NONE);
-		ta.setDurationMilliseconds(2000);
-		ta.setTransformable3D(currentModel);
-		getCurrentScene().registerAnimation(ta);
-		ta.play();
-		
-		loadAnim2Obj(currentModel, "squall_anim", false);
-		
-		TranslateAnimation3D ta2 = new TranslateAnimation3D(ePos,mPos);
-		ta2.setRepeatMode(RepeatMode.NONE);
-		ta2.setDurationMilliseconds(2000);
-		ta2.setTransformable3D(currentModel);
-		getCurrentScene().registerAnimation(ta2);
-		ta2.play();
-		
-		loadAnim2Obj(currentModel, "squall_stand_anim", false);
-		
-	}
-	
-	public void btn_magic(String kindof){
-		
-	}
-	
-	public void btn_item(){
-		
+		if (action == "attack"){
+				Vector3 mPos = currentModel.getPosition().clone();
+				Vector3 ePos = currentEnemy.getPosition().clone();
+				ePos.y = ePos.y+1.5f;
+				ePos.x = ePos.x-3;
+			
+				TranslateAnimation3D ta = new TranslateAnimation3D(mPos, ePos);
+				ta.setRepeatMode(RepeatMode.NONE);
+				ta.setDurationMilliseconds(2000);
+				ta.setTransformable3D(currentModel);
+				getCurrentScene().registerAnimation(ta);
+				ta.play();
+				
+				loadAnim2Obj(currentModel, "squall_anim", false);
+				
+				TranslateAnimation3D ta2 = new TranslateAnimation3D(ePos,mPos);
+				ta2.setRepeatMode(RepeatMode.NONE);
+				ta2.setDurationMilliseconds(2000);
+				ta2.setTransformable3D(currentModel);
+				getCurrentScene().registerAnimation(ta2);
+				ta2.play();
+				
+				loadAnim2Obj(currentModel, "squall_stand_anim", false);
+		}
 	}
 	
 	public boolean onTouch(MotionEvent event) {
@@ -333,7 +329,7 @@ public class Renderer extends RajawaliRenderer {
 		
 		//createBackground("mansion");
 		createSky("china");
-		createClouds(num);
+	//	createClouds(num);
 		
 		SkeletalAnimationObject3D anaconda = showMonster("anaconda", new Vector3( 6f,-1.5f,0), new Vector3(0,90,75), new Vector3(4f));
 		anaconda.setFps(24);

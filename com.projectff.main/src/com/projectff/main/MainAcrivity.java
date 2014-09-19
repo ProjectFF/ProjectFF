@@ -5,6 +5,7 @@ import java.util.Dictionary;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -15,10 +16,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 
 import rajawali.RajawaliActivity;
 
@@ -51,8 +55,6 @@ public class MainAcrivity extends RajawaliActivity {
 			this.renderer.setSurfaceView(mSurfaceView);
 			this.setRenderer(renderer);
 		}
-		getButtons();
-		// mLayout.addView();
 	}
 	
 	private static ArrayList<View> getViewsByTag(ViewGroup root, String tag){
@@ -74,21 +76,6 @@ public class MainAcrivity extends RajawaliActivity {
 	    return views;
 	}
 	
-	public void getButtons(){
-		
-		View v = findViewById(android.R.id.content);
-		ViewGroup v1 =(ViewGroup) v;
-		
-		ArrayList<View> a = getViewsByTag(v1, "btn");
-		
-		for(View v2 : a ){
-			
-			Log.d("child", v2.toString());
-			
-		}
-				
-	}
-			
 	
 	@Override
     public boolean onTouchEvent(MotionEvent event) 
