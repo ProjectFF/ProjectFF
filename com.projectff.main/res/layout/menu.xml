@@ -9,20 +9,21 @@
 	        android:layout_height="match_parent" >
 	</android.opengl.GLSurfaceView>
 
-	<android.menu
-	    android:layout_width="wrap_content"
-    	android:layout_height="wrap_content"
-		>
-	    <item android:id="@+id/file"
-          android:icon="@drawable/icon_magic"
-          android:title="magic" >
-          <menu>
-	            <item android:id="@+id/fire"
-	                  android:title="Fire" />
-	            <item android:id="@+id/ice"
-	                  android:title="Ice" />
-	      </menu>
-    	</item>
-	</menu>
+	<LinearLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:gravity="bottom"
+	    android:orientation="vertical" >
+
+	    <com.touchmenotapps.widget.radialmenu.semicircularmenu.SemiCircularRadialMenu
+	        android:id="@+id/radial_menu"
+	        android:layout_width="272dp"
+	        android:layout_height="100dp"
+	        android:layout_gravity="bottom"
+	        android:layout_weight="0.33"
+	        android:alpha="0.5"
+	        android:background="#00FFFFFF"
+	        android:padding="5dp" />
+	</LinearLayout>
 	
 </FrameLayout>

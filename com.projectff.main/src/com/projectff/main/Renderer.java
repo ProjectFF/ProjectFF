@@ -259,6 +259,7 @@ public class Renderer extends RajawaliRenderer {
 		Log.d("action", action);
 		
 		if (action == "attack"){
+		
 				Vector3 mPos = currentModel.getPosition().clone();
 				Vector3 ePos = currentEnemy.getPosition().clone();
 				ePos.y = ePos.y+1.5f;
@@ -282,6 +283,8 @@ public class Renderer extends RajawaliRenderer {
 				
 				loadAnim2Obj(currentModel, "squall_stand_anim", false);
 		}
+		
+		
 	}
 	
 	public boolean onTouch(MotionEvent event) {
@@ -317,12 +320,13 @@ public class Renderer extends RajawaliRenderer {
 		mLight.setPower(2f);
 		
 		mLight2 = new PointLight(); // set the direction
-		mLight.setPosition(0,.1,0);
-		mLight.setColor(1.0f, 1.0f, 1.0f);
-		mLight.setPower(2f);
+		mLight2.setPosition(0,.1,0);
+		mLight2.setColor(1.0f, 1.0f, 1.0f);
+		mLight2.setPower(2f);
 		
 		
 		getCurrentScene().addLight(mLight);
+		getCurrentScene().addLight(mLight2);
 		getCurrentCamera().setY(.1);
 		getCurrentCamera().setX(-7);
 		getCurrentCamera().setZ(7);
