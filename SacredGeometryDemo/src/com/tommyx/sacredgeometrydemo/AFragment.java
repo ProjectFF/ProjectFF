@@ -100,6 +100,10 @@ public abstract class AFragment extends RajawaliFragment{
 			RajLog.w(this + ": Fragment created without renderer!");
 		}
 
+		public void onTouch(){
+			
+		}
+		
 		@Override
 		public void onSurfaceDestroyed() {
 			stopRendering();

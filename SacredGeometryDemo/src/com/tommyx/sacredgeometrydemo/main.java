@@ -29,6 +29,8 @@ public class main extends RajawaliActivity{
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+			
+			
 	}
 	 
 	@Override
