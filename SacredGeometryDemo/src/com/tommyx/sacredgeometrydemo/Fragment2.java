@@ -195,7 +195,7 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 			bloomEffect.setRenderToScreen(true);
 			getCurrentCamera().setLookAt(0,0,0); 
 			
-			createFruit();
+			createFlower();
 			
 //			anim = new EllipticalOrbitAnimation3D(
 //					  new Vector3(0, 0, 0), 
@@ -391,6 +391,46 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 			createPoints();
 		}
 	
+		private void createFlower(){
+			getCurrentCamera().setPosition(0,.1,5);
+			numObjects = 19;
+			objects2D = new Plane[numObjects];
+			
+			Material m = new Material();
+			m.setColorInfluence(0);
+			
+			try{
+				m.addTexture(new Texture("circle", R.drawable.circle));
+			}catch(TextureException e){
+				e.printStackTrace();
+			}
+			
+			float xcount = 0;
+			float ycount = 0;
+			
+			for (int i=0; i< numObjects; i++){
+				
+				if (i==0){ xcount=  0.0f ;ycount= 0.0f;}
+				if (i==1){ xcount=  0.0f ;ycount= 0.5f;}
+				if (i==2){ xcount= -0.44f ;ycount= 0.25f;}
+				if (i==3){ xcount= -0.44f ;ycount= -0.25f;}
+				if (i==4){ xcount= -0.0f ;ycount= -0.5f;}
+				if (i==5){ xcount=  0.44f ;ycount= -0.25f;}
+				if (i==6){ xcount=  0.44f ;ycount=  0.25f;}
+//				
+				objects2D[i] = new Plane(1,1,10,10); 
+				objects2D[i].setDoubleSided(true);
+				objects2D[i].setMaterial(m);
+				objects2D[i].setPosition(xcount,ycount, 0);
+				objects2D[i].setTransparent(true);
+				getCurrentScene().addChild(objects2D[i]);
+				objects2D[i].setVisible(false);
+				
+			}			
+			numObjects = objects2D.length;
+			createPoints();
+		}
+		
 		private void createFruit3d(){
 		
 			getCurrentCamera().setPosition(0,.1,20);
@@ -474,7 +514,7 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 				
 				
 				objects3D[i] = new Sphere(1f,30,30); 
-				//objects3D[i].setColor((int)(Math.random() * 0xffffff)); 
+				objects3D[i].setColor((int)(Math.random() * 0xffffff)); 
 				objects3D[i].setDoubleSided(true);
 				objects3D[i].setMaterial(onMaterial);
 				objects3D[i].setScale(1f);
@@ -509,31 +549,40 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 					}
 				}
 			}
-			if (counterset && linecounter == 1){
-				counterset = false;
-				drawPlatonic(R.raw.coords_tetra, true);
-				animcount = 150;
-			}
+//			if (counterset && linecounter == 1){
+//				counterset = false;
+//				drawPlatonic(R.raw.coords_tetra, true);
+//				animcount = 150;
+//			}
 			
-			if (counterset && linecounter == 2){
-				counterset = false;
-				clearLines();						
-				drawPlatonic(R.raw.coords_cube, true);
-			}
-	
-			if (counterset && linecounter == 3){
-				counterset = false;
-				clearLines();	
-				drawPlatonic(R.raw.coords_octra, true);	
-			}
-			
-			if (counterset && linecounter == 4){
-				counterset = false;
-				clearScene();
-				createFruit3d();
-				drawPlatonic(R.raw.coords_cube3d, false);
-				animcount = 1000;
-			}
+//			if (counterset && linecounter == 2){
+//				counterset = false;
+//				clearLines();						
+//				drawPlatonic(R.raw.coords_cube, true);
+//			}
+//	
+//			if (counterset && linecounter == 3){
+//				counterset = false;
+//				clearLines();	
+//				drawPlatonic(R.raw.coords_octra, true);	
+//			}
+//			
+//			if (counterset && linecounter == 3){
+//				counterset = false;
+//				clearScene();
+//				createFlower();
+//				//drawPlatonic(R.raw.coords_octra, true);	
+//			}
+//			
+//			
+//			
+//			if (counterset && linecounter == 5){
+//				counterset = false;
+//				clearScene();
+//				createFruit3d();
+//				drawPlatonic(R.raw.coords_cube3d, false);
+//				animcount = 1000;
+//			}
 	
 			
 //			if (counterset && linecounter == 2){
