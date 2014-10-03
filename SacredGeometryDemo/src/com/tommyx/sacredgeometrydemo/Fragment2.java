@@ -10,7 +10,7 @@ import javax.microedition.khronos.opengles.GL10;
 import android.content.Context;
 
 import rajawali.Object3D;
-import rajawali.animation.AlphaAnimation3D;
+import rajawali.animation.ColorAnimation3D;
 import rajawali.animation.Animation.RepeatMode;
 import rajawali.animation.ColorAnimation3D;
 import rajawali.animation.EllipticalOrbitAnimation3D;
@@ -125,7 +125,7 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 		Object3D nullObject = new Object3D();
 		Object3D nullLinesObject = new Object3D();
 		ZahlenPaar[] pairs;
-		
+		float rotate = 0;
 		boolean pickedObject = false;
 		
 		private ObjectColorPicker mPicker;
@@ -212,14 +212,14 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 				
 		public void animate(Object3D o, int duration){
 			
-			AlphaAnimation3D anim3 = new AlphaAnimation3D(0x00000000, 0xFF000000);
+			ColorAnimation3D anim3 = new ColorAnimation3D(0x00000000, 0xFF000000);
 			anim3.setDurationMilliseconds(duration);
 			anim3.setRepeatMode(RepeatMode.NONE);
 			anim3.setTransformable3D(o);
 			getCurrentScene().registerAnimation(anim3);
 			anim3.play();
 			
-			AlphaAnimation3D anim2 = new AlphaAnimation3D(0xff000000, 0x00000000);
+			ColorAnimation3D anim2 = new ColorAnimation3D(0xff000000, 0x00000000);
 			anim2.setDurationMilliseconds(duration);
 			anim2.setDelayMilliseconds(duration);
 			anim2.setRepeatMode(RepeatMode.NONE);
@@ -423,10 +423,12 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 				objects2D[i].setMaterial(m);
 				objects2D[i].setPosition(xcount,ycount, 0);
 				objects2D[i].setTransparent(true);
-				getCurrentScene().addChild(objects2D[i]);
+				//getCurrentScene().addChild(objects2D[i]);
 				objects2D[i].setVisible(false);
+				nullObject.addChild(objects2D[i]);
 				
-			}			
+			}	
+			getCurrentScene().addChild(nullObject);
 			numObjects = objects2D.length;
 			createPoints();
 		}
@@ -536,18 +538,27 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 		@Override
 		public void onDrawFrame(GL10 glUnused) {
 			super.onDrawFrame(glUnused);
-			
+			rotate+=0.9f;
 			if (timer > 0 && timer < animcount && counter != numObjects){
 			//	if (timer % 1 == 0) 
 				if (timer % devisor == 0 ){
 							
 					if (counter < numObjects && linecounter == 0) 
 					{	
-						objects2D[counter].setVisible(true);
-   					    animate(objects2D[counter], 1000);
+						nullObject.getChildAt(counter).setVisible(true);
+   					    //animate(objects2D[counter], 1000);
    					    counter+=1;
 					}
+					
 				}
+				if (linecounter == 1)
+					nullObject.setRotZ(rotate);
+				
+			}
+			
+			if (counterset && linecounter == 1){
+				counterset = false;
+				
 			}
 //			if (counterset && linecounter == 1){
 //				counterset = false;

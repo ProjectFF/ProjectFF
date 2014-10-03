@@ -6,7 +6,7 @@ import android.content.Context;
 
 import rajawali.Object3D;
 import rajawali.animation.Animation.RepeatMode;
-import rajawali.animation.AlphaAnimation3D;
+import rajawali.animation.ColorAnimation3D;
 import rajawali.animation.EllipticalOrbitAnimation3D;
 import rajawali.animation.mesh.SkeletalAnimationObject3D;
 import rajawali.lights.DirectionalLight;
@@ -133,14 +133,14 @@ public class Fragment1 extends AFragment {
 		
 		public void animate(Object3D o, int duration){
 			
-			AlphaAnimation3D anim = new AlphaAnimation3D(0x00000000, 0xFF000000);
+			ColorAnimation3D anim = new ColorAnimation3D(0x00000000, 0xFF000000);
 			anim.setDurationMilliseconds(duration);
 			anim.setRepeatMode(RepeatMode.NONE);
 			anim.setTransformable3D(o);
 			getCurrentScene().registerAnimation(anim);
 			anim.play();
 			
-			AlphaAnimation3D anim2 = new AlphaAnimation3D(0xff000000, 0x00000000);
+			ColorAnimation3D anim2 = new ColorAnimation3D(0xff000000, 0x00000000);
 			anim2.setDurationMilliseconds(duration);
 			anim2.setDelayMilliseconds(duration);
 			anim2.setRepeatMode(RepeatMode.NONE);
