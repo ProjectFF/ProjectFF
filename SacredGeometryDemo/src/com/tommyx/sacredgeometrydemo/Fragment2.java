@@ -9,6 +9,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
 
+import rajawali.Camera;
 import rajawali.Object3D;
 import rajawali.animation.ColorAnimation3D;
 import rajawali.animation.Animation.RepeatMode;
@@ -22,6 +23,7 @@ import rajawali.lights.PointLight;
 import rajawali.materials.Material;
 import rajawali.materials.methods.DiffuseMethod;
 import rajawali.materials.methods.SpecularMethod;
+import rajawali.materials.textures.ATexture;
 import rajawali.materials.textures.ATexture.TextureException;
 import rajawali.materials.textures.AlphaMapTexture;
 import rajawali.materials.textures.CubeMapTexture;
@@ -33,11 +35,13 @@ import rajawali.math.vector.Vector3;
 import rajawali.parser.Loader3DSMax;
 import rajawali.postprocessing.PostProcessingManager;
 import rajawali.postprocessing.passes.BlendPass.BlendMode;
+import rajawali.postprocessing.passes.RenderPass;
 import rajawali.primitives.Cube;
 import rajawali.primitives.Line3D;
 import rajawali.primitives.Plane;
 import rajawali.primitives.Sphere;
 import rajawali.renderer.RajawaliRenderer;
+import rajawali.scene.RajawaliScene;
 import rajawali.util.ObjectColorPicker;
 import rajawali.util.OnObjectPickedListener;
 import android.graphics.Bitmap;
@@ -75,6 +79,7 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 			((FragmentRenderer) mRenderer).getObjectAt(event.getX(), event.getY());
 			break;
 		case MotionEvent.ACTION_MOVE:
+			Log.d("sdfa", Float.toString(event.getX()));
 			((FragmentRenderer) mRenderer).rotateCamera(event.getX(),
 					event.getY());
 			break;
@@ -100,6 +105,8 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 		Sphere objects3D[];
 		Plane  objects2D[];
 		Line3D objects1D[];
+		Plane mirrors[]; 
+		
 		
 		Tools tools = new Tools();
 		
@@ -111,6 +118,8 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 		Material onMaterial;
 		Material offMaterial;
 		
+		Material mirrorMaterial;
+
 		float timer;
 		int numObjects = 12;
 		
@@ -128,14 +137,17 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 		float rotate = 0;
 		boolean pickedObject = false;
 		
+		RajawaliScene mOtherScene = new RajawaliScene(this); 
+		Camera cam = new Camera();
+		 
 		private ObjectColorPicker mPicker;
+		private ATexture mCurrentTexture;
 		
 		public FragmentRenderer(Context main) {
 			super(main);
 			
 		}
-	
-		
+			
 		public void getObjectAt(float x, float y) {
 			xpos = x;
 			ypos = y;
@@ -183,31 +195,32 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 			mLight.setPower(1.5f);
 			
 			getCurrentScene().addLight(mLight);
+			getCurrentScene().setBackgroundColor(0xaaaaaaaa);
+			getCurrentCamera().setPosition(0, .1f, 5);
 			
-			getCurrentScene().setBackgroundColor(0x000000);
+			createFruit();
 			
-			mPostProcessingManager = new PostProcessingManager(this);
+			mOtherScene = new RajawaliScene(this);
+			mOtherScene.setBackgroundColor(0xaaaaaaaa);
+			mOtherScene.addLight(mLight);
+			
+			mPostProcessingManager = new PostProcessingManager(this, 512, 512);
+			
+			RenderPass renderPass = new RenderPass(getCurrentScene(),
+					getCurrentCamera(), 0);
+	
+			mPostProcessingManager.addPass(renderPass);
 	
 			MyEffect bloomEffect = new MyEffect(getCurrentScene(), getCurrentCamera(), mViewportWidth, mViewportHeight,0x222222, 0xeeeeee, BlendMode.ADD);
 			getCurrentCamera().setFarPlane(1000);
 			mPostProcessingManager.addEffect(bloomEffect);
 			
 			bloomEffect.setRenderToScreen(true);
-			getCurrentCamera().setLookAt(0,0,0); 
+	
+			createMirrors();
 			
-			createFlower();
+			switchScene(mOtherScene);
 			
-//			anim = new EllipticalOrbitAnimation3D(
-//					  new Vector3(0, 0, 0), 
-//					  new Vector3(0, .1, 15), 0, 359);
-//
-//
-//			anim.setRepeatMode(RepeatMode.INFINITE);
-//			anim.setDurationMilliseconds(10000);
-//			anim.setTransformable3D(getCurrentCamera());
-//			getCurrentScene().registerAnimation(anim);
-//			anim.play();
-						
 		}
 				
 		public void animate(Object3D o, int duration){
@@ -347,7 +360,6 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 		}
 		
 		private void createFruit(){
-			getCurrentCamera().setPosition(0,.1,7);
 			numObjects = 14;
 			objects2D = new Plane[numObjects];
 			
@@ -355,7 +367,7 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 			m.setColorInfluence(0);
 			
 			try{
-				m.addTexture(new Texture("circle", R.drawable.circle));
+				m.addTexture(new Texture("circle", R.drawable.circle2));
 			}catch(TextureException e){
 				e.printStackTrace();
 			}
@@ -364,15 +376,16 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 			float ycount = 2;
 			
 			for (int i=0; i< numObjects; i++){
+			
 				objects2D[i] = new Plane(1,1,10,10); 
 				objects2D[i].setDoubleSided(true);
 				objects2D[i].setMaterial(m);
 				objects2D[i].setPosition(xcount,ycount, 0);
 				objects2D[i].setTransparent(true);
-				getCurrentScene().addChild(objects2D[i]);
+				nullObject.addChild(objects2D[i]);
 				objects2D[i].setVisible(false);
 			
-			if (i>=0 && i<4){
+				if (i>=0 && i<4){
 					ycount-=1;
 					xcount=0;
 				}
@@ -384,17 +397,19 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 				if (i==9){ xcount= 1;ycount=-.5f;}
 				if (i==10){ xcount=-2;ycount=-1;}
 				if (i==11){ xcount= 2;ycount=-1;}
-				
-				
-			}			
+			
+			}
+			
+			getCurrentScene().addChild(nullObject);
 			numObjects = objects2D.length;
 			createPoints();
 		}
 	
-		private void createFlower(){
+		private void createSeed(){
 			getCurrentCamera().setPosition(0,.1,5);
 			numObjects = 19;
 			objects2D = new Plane[numObjects];
+			nullObject = new Object3D();
 			
 			Material m = new Material();
 			m.setColorInfluence(0);
@@ -408,6 +423,10 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 			float xcount = 0;
 			float ycount = 0;
 			
+			float vor = 0;
+			float nach = 1;
+			float erg = 0;
+			
 			for (int i=0; i< numObjects; i++){
 				
 				if (i==0){ xcount=  0.0f ;ycount= 0.0f;}
@@ -417,7 +436,15 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 				if (i==4){ xcount= -0.0f ;ycount= -0.5f;}
 				if (i==5){ xcount=  0.44f ;ycount= -0.25f;}
 				if (i==6){ xcount=  0.44f ;ycount=  0.25f;}
-//				
+
+				
+				erg = vor+nach;
+				nach = vor;
+				vor = erg;
+				float phi = vor / nach;
+				
+				Log.d("fibunacci", Float.toString(phi));
+				
 				objects2D[i] = new Plane(1,1,10,10); 
 				objects2D[i].setDoubleSided(true);
 				objects2D[i].setMaterial(m);
@@ -434,7 +461,6 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 		}
 		
 		private void createFruit3d(){
-		
 			getCurrentCamera().setPosition(0,.1,20);
 			numObjects = 30;
 			objects3D = new Sphere[numObjects];
@@ -535,6 +561,28 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 			numObjects = objects3D.length-1;
 		}
 			
+		private void createMirrors(){
+		
+			mirrors = new Plane[3];
+			
+			for(int i=0; i<mirrors.length;i++){
+			
+				mirrors[i] = new Plane(10,10,1,1);
+				mirrors[i].setColor(0x000000);
+				mirrors[i].setDoubleSided(true);
+				mirrors[i].setPosition(-10f+(i*10), 0, -5);
+				if (i==1) mirrors[i].setPosition(-10f+(i*10), 0, -7);
+				mirrors[i].setRotation(0, 30-(i*30), 180);
+				mirrorMaterial = new Material();
+				mirrorMaterial.setDiffuseMethod(new DiffuseMethod.Lambert());
+				mirrorMaterial.enableLighting(true);
+				mirrorMaterial.setColorInfluence(1);
+			
+				mirrors[i].setMaterial(mirrorMaterial); 
+				mOtherScene.addChild(mirrors[i]);
+			}
+		}		
+			
 		@Override
 		public void onDrawFrame(GL10 glUnused) {
 			super.onDrawFrame(glUnused);
@@ -551,60 +599,56 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 					}
 					
 				}
-				if (linecounter == 1)
-					nullObject.setRotZ(rotate);
+				if (counter < numObjects && linecounter == 4) 
+				{	
+						nullObject.getChildAt(counter).setVisible(true);
+   					    //animate(objects2D[counter], 1000);
+   					    counter+=1;
+				}
+				if (linecounter == 5) nullObject.setRotation(rotate, 0,  rotate);
 				
 			}
 			
 			if (counterset && linecounter == 1){
 				counterset = false;
-				
+				drawPlatonic(R.raw.coords_tetra, true);
+				animcount = 150;
 			}
-//			if (counterset && linecounter == 1){
-//				counterset = false;
-//				drawPlatonic(R.raw.coords_tetra, true);
-//				animcount = 150;
-//			}
 			
-//			if (counterset && linecounter == 2){
-//				counterset = false;
-//				clearLines();						
-//				drawPlatonic(R.raw.coords_cube, true);
-//			}
-//	
-//			if (counterset && linecounter == 3){
-//				counterset = false;
-//				clearLines();	
-//				drawPlatonic(R.raw.coords_octra, true);	
-//			}
-//			
-//			if (counterset && linecounter == 3){
-//				counterset = false;
-//				clearScene();
-//				createFlower();
-//				//drawPlatonic(R.raw.coords_octra, true);	
-//			}
-//			
-//			
-//			
-//			if (counterset && linecounter == 5){
-//				counterset = false;
-//				clearScene();
-//				createFruit3d();
-//				drawPlatonic(R.raw.coords_cube3d, false);
-//				animcount = 1000;
-//			}
+			if (counterset && linecounter == 2){
+				counterset = false;
+				clearLines();						
+				drawPlatonic(R.raw.coords_cube, true);
+			}
 	
+			if (counterset && linecounter == 3){
+				counterset = false;
+				clearLines();	
+				drawPlatonic(R.raw.coords_octra, true);	
+			}
 			
-//			if (counterset && linecounter == 2){
-//				counterset = false;
-//				//getCurrentScene().setBackgroundColor(0);
-//				//for (int i=0;i<numObjects+1;i++)getCurrentScene().removeChild(fruit3d[i]);
-//				getCurrentScene().removeChild(nullObject);
-//				getCurrentCamera().setPosition(0, .1, 7);
-//				createFruit();
-//				drawlines("Cube");
-//			}
+			if (counterset && linecounter == 4){
+				counterset = false;
+				counter = 0;
+				animcount = 150;
+				clearScene();
+				getCurrentScene().removeChild(nullObject);
+				nullObject = null;
+				createSeed();
+			}
+			if (counterset && linecounter == 5){
+				counterset = false;
+				animcount = 400;
+			}
+			
+			if (counterset && linecounter == 6){
+				counterset = false;
+				clearScene();
+				createFruit3d();
+				drawPlatonic(R.raw.coords_cube3d, false);
+				animcount = 1000;
+			}
+	
 			
 			if (timer == animcount){
 				counter = 0;
@@ -613,15 +657,38 @@ public class Fragment2 extends AFragment implements OnTouchListener {
 				counterset = true;
 			}
 			timer +=1;
-			Log.d("timer", Float.toString(timer));
+		///	Log.d("timer", Float.toString(timer));
 			
 		}
 		
 		@Override
 		public void onRender(final double deltaTime) {
-			super.onRender(deltaTime);
+			setViewPort(512, 512);
+			mPostProcessingManager.render(deltaTime);
+			try {
 			
-			//mPostProcessingManager.render(deltaTime);
+				if (mCurrentTexture != null)
+					for(int i=0; i<mirrors.length;i++){
+						mirrors[i].getMaterial().removeTexture(mCurrentTexture);
+					}
+					
+					mCurrentTexture = mPostProcessingManager.getTexture();
+					
+					for(int i=0; i<mirrors.length;i++){
+						mirrors[i].getMaterial().addTexture(mCurrentTexture);
+					}
+				} catch (TextureException e) {
+					e.printStackTrace();
+				}
+			
+			//
+			// -- Change the viewport back to full screen
+			//
+			
+			setViewPort(mViewportWidth, mViewportHeight);
+			getCurrentCamera().setPosition(0,0.1f,15);
+			super.onRender(deltaTime);
+
 		}
 
 	}

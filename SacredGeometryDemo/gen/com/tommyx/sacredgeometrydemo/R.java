@@ -12,16 +12,18 @@ public final class R {
     }
     public static final class drawable {
         public static final int circle=0x7f020000;
-        public static final int ic_launcher=0x7f020001;
-        public static final int negy=0x7f020002;
-        public static final int negz=0x7f020003;
-        public static final int posy=0x7f020004;
-        public static final int sphere=0x7f020005;
-        public static final int sphere1=0x7f020006;
-        public static final int spheremap=0x7f020007;
+        public static final int circle2=0x7f020001;
+        public static final int ic_launcher=0x7f020002;
+        public static final int negy=0x7f020003;
+        public static final int negz=0x7f020004;
+        public static final int posy=0x7f020005;
+        public static final int sphere=0x7f020006;
+        public static final int sphere1=0x7f020007;
+        public static final int spheremap=0x7f020008;
     }
     public static final class id {
         public static final int content_frame=0x7f070000;
+        public static final int seekBar1=0x7f070001;
     }
     public static final class layout {
         public static final int rajawali_fragment=0x7f030000;
