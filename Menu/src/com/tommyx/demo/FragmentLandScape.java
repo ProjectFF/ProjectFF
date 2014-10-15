@@ -1,34 +1,46 @@
 package com.tommyx.demo;
 
+import java.util.HashMap;
+import java.util.Stack;
+
 import javax.microedition.khronos.opengles.GL10;
 
-import com.tommyx.demos.R;
 import android.content.Context;
+
+import com.tommyx.demos.R;
 
 import rajawali.Camera;
 import rajawali.Object3D;
-import rajawali.animation.AlphaAnimation3D;
-import rajawali.animation.Animation.RepeatMode;
 import rajawali.animation.ColorAnimation3D;
+import rajawali.animation.Animation.RepeatMode;
 import rajawali.animation.EllipticalOrbitAnimation3D;
+import rajawali.animation.RotateAnimation3D;
+import rajawali.animation.RotateOnAxisAnimation;
 import rajawali.animation.mesh.SkeletalAnimationObject3D;
 import rajawali.lights.DirectionalLight;
 import rajawali.lights.PointLight;
 import rajawali.materials.Material;
 import rajawali.materials.methods.DiffuseMethod;
+import rajawali.materials.methods.SpecularMethod;
 import rajawali.materials.textures.ATexture;
 import rajawali.materials.textures.ATexture.TextureException;
 import rajawali.materials.textures.AlphaMapTexture;
 import rajawali.materials.textures.CubeMapTexture;
+import rajawali.materials.textures.SphereMapTexture;
 import rajawali.materials.textures.Texture;
+import rajawali.materials.textures.VideoTexture;
+import rajawali.math.vector.Vector2;
 import rajawali.math.vector.Vector3;
+import rajawali.parser.Loader3DSMax;
 import rajawali.postprocessing.PostProcessingManager;
-import rajawali.postprocessing.passes.RenderPass;
+import rajawali.postprocessing.effects.ShadowEffect;
 import rajawali.postprocessing.passes.BlendPass.BlendMode;
+import rajawali.postprocessing.passes.RenderPass;
 import rajawali.primitives.Cube;
+import rajawali.primitives.Line3D;
 import rajawali.primitives.Plane;
+import rajawali.primitives.Sphere;
 import rajawali.renderer.RajawaliRenderer;
-import rajawali.renderer.RenderTarget;
 import rajawali.scene.RajawaliScene;
 import rajawali.util.ObjectColorPicker;
 import rajawali.util.OnObjectPickedListener;
@@ -37,19 +49,23 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Bitmap.Config;
-import android.graphics.Paint.Align;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.Typeface;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnTouchListener;
+import android.view.animation.AlphaAnimation;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.media.MediaPlayer;
+import android.opengl.GLES20;
 import android.os.Bundle;
 
-public class FragmentMenu extends AFragment implements OnTouchListener {
+public class FragmentLandScape extends AFragment implements OnTouchListener {
 
 	@Override
 	protected ARenderer createRenderer() {
@@ -57,17 +73,13 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 	}
 	
 	@Override
-	public boolean onTouch(View arg0, MotionEvent event) {
+	public boolean onTouch(View v, MotionEvent event) {
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN:
-			((FragmentRenderer) mRenderer).onFingerDown(event.getX(), event.getY());
+			((FragmentRenderer) mRenderer).getObjectAt(event.getX(), event.getY());
 			break;
 		case MotionEvent.ACTION_MOVE:
-			((FragmentRenderer) mRenderer).onFingerMove(event.getX(),
-					event.getY());
-			break;
-		case MotionEvent.ACTION_UP:
-			((FragmentRenderer) mRenderer).onFingerUp(event.getX(),
+			((FragmentRenderer) mRenderer).rotateCamera(event.getX(),
 					event.getY());
 			break;
 		default :
@@ -83,83 +95,61 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 		mSurfaceView.setOnTouchListener(this);
 		return mLayout;
 	}
+	
 	public final class FragmentRenderer extends ARenderer implements OnObjectPickedListener {
 
 		DirectionalLight mLight;
-		private PostProcessingManager target;
-		//Plane line0[];
-		private boolean cloudsEnabled = true;
+		private PostProcessingManager mPostProcessingManager;
+		
 		Object3D clouds[];
 		
-		float timer = 0;
-		int numObjects = 0;
+		float xpos, ypos, xd, yd; 
 		
-		int animcount = 100;
-		int linecounter = 0;
-		boolean counterset = false;
-		int counter = 0;
-		int devisor = 5;
-		int duration = 600;
+		float timer;
+		
 		MediaPlayer sound1; 
-		RajawaliScene glowScene, liveScene;
-		Plane buttons[];
-		Texture gTexture; 
-		Object3D nullObject;
-		float xd,yd, xpos, ypos = 0;
+		EllipticalOrbitAnimation3D anim;
+		Object3D nullObject = new Object3D();
+		float rotate = 0;
+		boolean pickedObject = false;
+		
+		Camera cam = new Camera();
+		 
 		private ObjectColorPicker mPicker;
+		private boolean cloudsEnabled = true;
 		
-		Object3D pickedObject;
-		
-		float half_widht;
-		float oldx;
 		public FragmentRenderer(Context main) {
 			super(main);
+			
 		}
-		
-		public void onFingerDown(float x, float y) {
+			
+		public void getObjectAt(float x, float y) {
+			xpos = x;
+			ypos = y;
 			
 			if (nullObject.getNumChildren()>0){
-				yd = (float) nullObject.getRotY();
+				yd = (float) nullObject.getRotX();
+				xd = (float) nullObject.getRotY();
 			}
+			
 			mPicker.getObjectAt(x, y);
 		}
-		
-		public void onFingerUp(float x, float y){
-			yd = (float) nullObject.getRotY();
-		}
+
+		public void rotateCamera(float x, float y){
 			
-		public void onFingerMove(float x, float y){
-			 
-			if (oldx != x){
-				if (oldx > x) {
-					yd += 2.5f; 
-					nullObject.setRotY(yd);
-				}
-				else 
-				{
-					yd-= 2.5f;
-					nullObject.setRotY(yd);
-				}
+			if (nullObject instanceof Object3D){
+				nullObject.setRotX(xd+(y/8));
+				nullObject.setRotY(yd+(x/8));
+				getCurrentCamera().setRotY(xd+(x/2));
+			}else {
+				getCurrentCamera().setRotY(xd+(x/2));
+				
+				
 			}
-			oldx = x;
 		}
-			
-		@Override 
+		
 		public void onObjectPicked(Object3D object) {
-			
-			Log.d("Name", object.getName());
-			
-			if (object.getName() == "btn_ls_demo.png") 
-				Log.d("HIT", "hit");
-				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-			if (object.getName() == "btn_rs_demo.png") 
-				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-			if (object.getName() == "btn_sc_demo.png") 
-				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-			if (object.getName() == "btn_ar_demo.png") 
-				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
 		}
-	
 		
 		@Override
 		protected void initScene() {
@@ -168,111 +158,44 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 			mPicker = new ObjectColorPicker(this);
 			mPicker.setOnObjectPickedListener(this);
 			
-			mLight = new DirectionalLight(0,0,0); // set the direction
-			mLight.setPosition(0,5,0);
+			mLight = new DirectionalLight(0,1,0); // set the direction
+			mLight.setPosition(0,5,5);
 			mLight.setColor(1.0f, 1.0f, 1.0f);
-			mLight.setPower(5f);
-
-			getCurrentCamera().setPosition(0, 1,50);
-			getCurrentCamera().setLookAt(0, 0, 0);
-			getCurrentCamera().setFarPlane(1000);
+			mLight.setDirection(0, 0, 0);
+			mLight.setPower(1.5f);
 			
 			getCurrentScene().addLight(mLight);
 			getCurrentScene().setBackgroundColor(0xffffffff);
+			getCurrentCamera().setPosition(0, 0.1f, 50);
 			
-			target = new PostProcessingManager(this);
+			mPostProcessingManager = new PostProcessingManager(this);
 			
-			MyEffect bloomEffect   = new MyEffect(getCurrentScene(), getCurrentCamera(), mViewportWidth, mViewportHeight,0x000000, 0xffffff, BlendMode.ADD);
-			target.addEffect(bloomEffect);
+			MyEffect bloomEffect = new MyEffect(getCurrentScene(), getCurrentCamera(), mViewportWidth, mViewportHeight,0x000000, 0xffffff, BlendMode.ADD);
+			getCurrentCamera().setFarPlane(1000);
+			mPostProcessingManager.addEffect(bloomEffect);
 			bloomEffect.setRenderToScreen(true);
 			
 			createSky("open");
 			createClouds(10);
-			createScene();
-			half_widht =  mViewportWidth / 2;
+			createLandScape();
+			
+			getCurrentCamera().setLookAt(0,0,0);
+			
+			EllipticalOrbitAnimation3D anim = new EllipticalOrbitAnimation3D(
+											new Vector3(0, .1, 0), 
+											new Vector3(0, .1, 10), 0, 359);
+
+			anim.setRepeatMode(RepeatMode.INFINITE);
+			anim.setDurationMilliseconds(100000);
+			anim.setTransformable3D(getCurrentCamera());
+			getCurrentScene().registerAnimation(anim);
+		//	anim.play();
+			
 		}
 		
-		private void createScene(){
-			float sFactor = 20;
-			int numButtons = 4;
-			int[] texts = new int[]{
-				R.drawable.btn_sc_demo,
-				R.drawable.btn_ls_demo,
-				R.drawable.btn_rs_demo,
-				R.drawable.btn_ar_demo,
-			};
+		public void createLandScape(){
 			
- 			buttons = new Plane[numButtons];
-			nullObject = new Object3D();
-			nullObject.setDoubleSided(true);
-			Material nullMat = new Material();
-			nullObject.setMaterial(nullMat);
-			
-			int count = 0; 
-			
-			for (int i=0;i<360; i+=360/numButtons){
-			
-			double posx = Math.cos(Math.toRadians(i));
-			double posz = Math.sin(Math.toRadians(i));
-				
-			if (i!=0) count = i/90;
-			
-			buttons[count] = new Plane(0.5f*sFactor,.5f*sFactor,1,1);
-			
-			Material m = new Material();
-			
-			buttons[count].setDoubleSided(true);
-			buttons[count].setTransparent(true);
-			m.enableLighting(true);
-			m.setDiffuseMethod(new DiffuseMethod.Lambert());
-			m.setColorInfluence(0.5f);
-			
-			try{
-				m.addTexture(new Texture("text",texts[count]));
-				m.addTexture(new Texture("glowmap",R.drawable.btn_back));
-			}catch(TextureException e){
-				e.printStackTrace();
-			}
-			
-				String id = getContext().getResources().getString(texts[count]);
-				String[] subs = id.split("/");
-				for (String s: subs)
-					id = s;
-				buttons[count].setName(id);
-				Log.d("NAMES", buttons[count].getName());
-				buttons[count].setColor(0xffffff);
-				buttons[count].setMaterial(m);
-				buttons[count].setRotation(0,-270+i,0);
-				buttons[count].setPosition(posx*sFactor, -8f, posz*sFactor);
-				nullObject.addChild(buttons[count]);
-			}
-				nullObject.setRotX(25);
-				for(int i = 0; i<nullObject.getNumChildren(); i++){
-					mPicker.registerObject(nullObject.getChildAt(i));
-					//getCurrentScene().addChild(nullObject.getChildAt(i));	
-				}
-				getCurrentScene().addChild(nullObject);
-				
 		}
-		
-		public Bitmap textAsBitmap(String text) 
-		{
-			Bitmap mScoreBitmap = Bitmap.createBitmap(256, 256, Config.ARGB_8888);
-			
-			Canvas mScoreCanvas = new Canvas(mScoreBitmap);
-			Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-			mTextPaint.setColor(Color.WHITE);
-			mTextPaint.setTextSize(50);
-			mTextPaint.setTypeface(Typeface.MONOSPACE);
-			
-			mScoreCanvas.drawColor(0, Mode.CLEAR);
-			
-			mScoreCanvas.drawText(text, 80,
-					148, mTextPaint);
-			
-			return mScoreBitmap;
-	    }
-			
 		
 		private void createClouds(int num){
 
@@ -343,28 +266,29 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 			sky.setMaterial(qm);
 			getCurrentScene().addChild(sky);
 		}
-			
-		
+				
 		@Override
 		public void onDrawFrame(GL10 glUnused) {
 			super.onDrawFrame(glUnused);
-			timer=0.3f;
+			rotate=0.5f;
+			
 			if(cloudsEnabled ){
 				for (Object3D i : clouds){
 					
-					if (i.getZ() > 100){ i.setZ(i.getZ() - 400);}
-					float position = (float) i.getZ() + timer;
+					if (i.getZ() > 100){ i.setZ(i.getZ() - 200);}
+					float position = (float) i.getZ() + rotate;
 					i.setZ(position);
 					i.setY(position);
 				}
 			}
-			
 		}
 		
 		@Override
 		public void onRender(final double deltaTime) {
-			target.render(deltaTime);
+			mPostProcessingManager.render(deltaTime);
 			super.onRender(deltaTime);
 		}
-	}	
+
+	}
+		
 }
