@@ -1,4 +1,4 @@
-package com.tommyx.demo;
+package com.tommyx.demos;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
