@@ -171,15 +171,15 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 			
 			Log.d("Name", object.getName());
 			
-//			if (object.getName() == "btn_ls_demo.png") 
-//				Log.d("HIT", "hit");
-//				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-//			if (object.getName() == "btn_rs_demo.png") 
-//				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-//			if (object.getName() == "btn_sc_demo.png") 
-//				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-//			if (object.getName() == "btn_ar_demo.png") 
-//				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
+			if (object.getName() == "btn_ls_demo.png") 
+				Log.d("HIT", "hit");
+				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
+			if (object.getName() == "btn_rs_demo.png") 
+				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
+			if (object.getName() == "btn_sc_demo.png") 
+				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
+			if (object.getName() == "btn_ar_demo.png") 
+				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
 		}
 	
 		

@@ -1,5 +1,6 @@
 package com.tommyx.demos;
 
+import java.io.ObjectInputStream;
 import java.util.Random;
 import java.util.Stack;
 
@@ -14,6 +15,7 @@ import com.tommyx.demos.FragmentMenu.FragmentRenderer;
 import rajawali.Camera;
 import rajawali.ChaseCamera;
 import rajawali.Object3D;
+import rajawali.SerializedObject3D;
 import rajawali.animation.ColorAnimation3D;
 import rajawali.animation.Animation.RepeatMode;
 import rajawali.animation.EllipticalOrbitAnimation3D;
@@ -53,8 +55,10 @@ import rajawali.renderer.RajawaliRenderer;
 import rajawali.scene.RajawaliScene;
 import rajawali.terrain.SquareTerrain;
 import rajawali.terrain.TerrainGenerator;
+import rajawali.util.MeshExporter;
 import rajawali.util.ObjectColorPicker;
 import rajawali.util.OnObjectPickedListener;
+import rajawali.util.exporter.SerializationExporter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -64,6 +68,7 @@ import android.graphics.Bitmap.Config;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.Typeface;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -79,7 +84,10 @@ import android.os.Bundle;
 
 public class FragmentLandScape extends AFragment implements OnTouchListener {
 
-	
+	public PostProcessingManager top;
+	public RajawaliScene bottomscene;
+	public ObjectInputStream ois;
+
 	@Override
 	protected ARenderer createRenderer() {
 		return new FragmentRenderer(getActivity());
@@ -87,6 +95,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	
 	@Override
 	public boolean onTouch(View arg0, MotionEvent event) {
+		   
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN:
 			((FragmentRenderer) mRenderer).onFingerDown(event.getX(), event.getY());
@@ -120,11 +129,13 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		private PostProcessingManager target;
 		//Plane line0[];
 		private boolean cloudsEnabled = true;
-		Object3D clouds[];
+		Object3D clouds[], clouds2[];
 		
-		float timer, rotate = 0;
+		float timer, time, rotate = 0;
+		float maxY = 2.5f;
+		float minY = -29;
 		int numObjects = 0;
-		
+		Material qm;
 		int animcount = 100;
 		int linecounter = 0;
 		boolean counterset = false;
@@ -139,28 +150,27 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		Object3D world;
 		 
 		float xd,yd, xpos, ypos = 0;
-		private SquareTerrain scenery;
-	
+		
 		Object3D pickedObject;
 		Sphere sky;
 		
 		float oldx, oldy;
-		
+		private PostProcessingManager bottom;
 		
 		public FragmentRenderer(Context main) {
 			super(main);
 		}
 		
 		public void onFingerDown(float x, float y) {
-			yd = (float) sky.getRotY();
+			yd = (float) getCurrentCamera().getRotY();
 			ypos = (float) world.getRotY();
-			xd = (float) getCurrentCamera().getY();
+		//	xd = (float) getCurrentCamera().getY();
 		}
 		
 		public void onFingerUp(float x, float y){
-			yd = (float) sky.getRotY();
+			yd = (float) getCurrentCamera().getRotY();
 			ypos = (float) world.getRotY();
-			xd = (float) getCurrentCamera().getY();
+		//	xd = (float) getCurrentCamera().getY();
 		}
 			
 		public void onFingerMove(float x, float y){
@@ -169,38 +179,42 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 				if (oldx > x) {
 					yd -= 1.5f; 
 					ypos -= 1.5f;
-					sky.setRotY(yd);
-					scenery.setRotY(yd);
+					getCurrentCamera().setRotY(yd);
+					//scenery.setRotY(yd);
 					world.setRotY(ypos);
 				}
 				else 
 				{
 					yd+= 1.5f;
 					ypos += 1.5f;
-					sky.setRotY(yd);
-					scenery.setRotY(yd);
+					getCurrentCamera().setRotY(yd);
+					//scenery.setRotY(yd);
 					world.setRotY(ypos);
 				}
 			}
 			if (oldy != y){
 				if (oldy > y) {
-					xd -= 0.5f; 
-					getCurrentCamera().setY(xd);
-					getCurrentCamera().setLookAt(0,xd,0);
+					if (xd > minY){
+						xd -= 0.1f; 
+						getCurrentCamera().setY(xd);
+						getCurrentCamera().setLookAt(0,xd,0);
+					}
 					Log.d("posY", Double.toString(getCurrentCamera().getY()));
 				}
 				else 
 				{
-					xd+= 0.5f;
-					getCurrentCamera().setLookAt(0,xd,0);
-					getCurrentCamera().setY(xd);
+					if (xd < maxY){
+						xd += 0.1f; 
+						getCurrentCamera().setLookAt(0,xd,0);
+						getCurrentCamera().setY(xd);
+					}
 				}
 		}
 			oldy = y;
 			oldx = x;
 			
 		}
-			
+
 		@Override
 		protected void initScene() {
 	
@@ -211,97 +225,131 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			world = new Object3D();
 			empty = new Object3D();
 			
-			mLight = new DirectionalLight(0,0,0); // set the direction
-			mLight.setPosition(0,300,-400);
-			mLight.setColor(1.0f, 1.0f, 1.0f);
-			mLight.setPower(.2f);
+			mLight = new DirectionalLight();
+			mLight.setDirection(0, 0, 0);
+			mLight.setPosition(0,10,0);
+			mLight.setPower(1.5f);
+			
+			getCurrentCamera().setPosition(0, -20,90);
+			getCurrentCamera().setLookAt(0, -20, 0);
+			getCurrentCamera().setFarPlane(200);
+			getCurrentCamera().setFieldOfView(70);
 
-			mLight2 = new DirectionalLight(0,0, 0); // set the directio
-			mLight.setDirection(1, -1, -1);
-			mLight2.setPosition(0,300, 0);
-			mLight2.setColor(1.0f, 1.0f, 1.0f);
-			mLight2.setPower(2f);
-
-			getCurrentCamera().setPosition(0, 1,250);
-			getCurrentCamera().setLookAt(0, 0, 0);
-			getCurrentCamera().setFarPlane(2000);
-
+			FogParams fp = new FogParams(FogType.LINEAR, 0xffffff, 0, 180);
+			
+			getCurrentScene().setFog(fp);
+			
 			getCurrentScene().addLight(mLight);
-			getCurrentScene().addLight(mLight2);
-			getCurrentScene().setBackgroundColor(0x0000000);
 			
-			target = new PostProcessingManager(this);
+			//getCurrentScene().setBackgroundColor(0x0000000);
 			
+			//createLensFlares();
 			createSky("open");
-			createClouds(10); 
 			createScene();
-			createLensFlares();
+			createClouds(10); 
+			
+			Cube cube = new Cube(5);
+			Material M = new Material();
+			M.setColor(0);
+			cube.setMaterial(M);
+			cube.setPosition(0,5,0);
+			getCurrentScene().addChild(cube);
+			
 			world.addChild(empty);
 			getCurrentScene().addChild(world);
 			
+			target = new PostProcessingManager(this);
 			
-			MyShadowEffect shadowEffect = new MyShadowEffect(getCurrentScene(), getCurrentCamera(), mLight2, 1024);
-			MyEffect bloomEffect = new MyEffect(getCurrentScene(), getCurrentCamera(), mViewportWidth, mViewportHeight,0x4444444, 0x999999, BlendMode.ADD);
+			ShadowEffect shadowEffect = new ShadowEffect(getCurrentScene(), getCurrentCamera(), mLight, 2048);
 			shadowEffect.setShadowInfluence(.5f);
 			target.addEffect(shadowEffect);
-			//target.addEffect(bloomEffect);
-			
-			//bloomEffect.setRenderToScreen(true);
 			shadowEffect.setRenderToScreen(true);
 			
 		}
 		
-		public void createScene(){
+		public void createScene(){ 
 			
-			Material qm = new Material(); 
+			qm = new Material(new CustomRawVertexShader(),new CustomRawFragmentShader()); 
 			qm.setDiffuseMethod(new DiffuseMethod.Lambert());
-			qm.enableLighting(true);	
-			qm.setColorInfluence(0);
-			
-			Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(),
-					R.drawable.terrain);
+			qm.enableLighting(false);	
+			qm.setColorInfluence(0f);
+			qm.enableTime(true);
 			
 			try {
-				SquareTerrain.Parameters terrainParams = SquareTerrain.createParameters(bmp);
-				terrainParams.setScale(4f, 50f, 4f);
-				terrainParams.setDivisions(128);
-				terrainParams.setTextureMult(1);
-			
-				terrainParams.setColorMapBitmap(bmp);
+//			
+//				Loader3DSMax loader = new Loader3DSMax(this,  R.raw.terrain2);
+//				loader.parse();
+//				Object3D terrain = loader.getParsedObject(); 
+//				
+//				MeshExporter exp = new MeshExporter(terrain);
+//				SerializationExporter s = new SerializationExporter();
+//				exp.export("terrain", s.getClass());
 				
-				scenery = TerrainGenerator.createSquareTerrainFromBitmap(terrainParams);
+			    ois = new ObjectInputStream(mContext.getResources().openRawResource(R.raw.terrainser));
+			    Object3D terrain = new Object3D((SerializedObject3D) ois.readObject());
+			    
+				Material m = new Material();
+				m.enableLighting(true);
+				m.setDiffuseMethod(new DiffuseMethod.Lambert());
+				m.addTexture(new Texture("terrain5", R.drawable.terrain2 ));
+				m.addTexture(new NormalMapTexture("nm", R.drawable.terrain_hm));
+				terrain.setMaterial(m);
+				m.setColorInfluence(0);
+				terrain.setDoubleSided(true);
+				terrain.setScale(7,5,7);
+				terrain.setRotX(90);
+				terrain.setPosition(0,-31,-0);
+				getCurrentScene().addChild(terrain);
 			
-				scenery.setY(-50);
-				qm.addTexture(new Texture("scenery", R.drawable.grass));
-				//qm.addTexture(new NormalMapTexture("scenery2", R.drawable.grass_b));
+				Plane p = new Plane(300,300,1,1);
+				p.setDoubleSided(true);
+				p.setRotX(90);
+				p.setTransparent(true);
+				p.setPosition(0,-30.0,0);
+				p.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_ONE_MINUS_SRC_ALPHA); // bright Sky 
 					
-				scenery.setDoubleSided(true);
-				scenery.setMaterial(qm);
-				getCurrentScene().addChild(scenery);
+				Texture t = new Texture("water", R.drawable.water);
 				
+				qm.addTexture(t);
+				
+				p.setMaterial(qm);
+				getCurrentScene().addChild(p);
+			
+				Plane p2 = new Plane(300,300,1,1);
+				p2.setDoubleSided(true);
+				p2.setRotY(180);
+				p2.setRotX(90);
+				p2.setTransparent(true);
+				p2.setPosition(0,-31.1,0);
+				p2.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_SRC_ALPHA); // bright Sky 
+					
+				p2.setMaterial(qm);
+				getCurrentScene().addChild(p2);
+			
 			}catch(Exception t) {
 				t.printStackTrace();
 			}
 		}
 		
 		public void createLensFlares(){
+			
 			Random random = new Random();
-			flares = new Object3D[1];
-			empty.setPosition(0,0,-400);
+			flares = new Object3D[4];
+			empty.setPosition(0,0,-100);
 			
 			Material cubeMat = new Material();
 			cubeMat.setColorInfluence(0.5f);
 			
 			Plane flare = new Plane(10,10,1,1);
-			flare.setPosition(0,0,-400);
+			flare.setPosition(0,0,-100);
 			flare.setTransparent(true);
 			
 			for (int i=0;i<flares.length;i++){
 			
 				flares[i] = flare.clone();
-				flares[i].setPosition(0, 200, -400);
+				flares[i].setPosition(0, 200, -100);
 				flares[i].setTransparent(true);
-				flares[i].setScale(50);
+				flares[i].setScale(5);
 				flares[i].setDoubleSided(true);
 				flares[i].setColor(0x666666 + random.nextInt(0x999999));
 				Material flareMat = new Material();
@@ -318,14 +366,15 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 				
 				empty.addChild(flares[i]);
 			}
+			
 		}
 		
-		private void createClouds(int num){
+		private void createClouds(int num){ 
 
 		    Plane cloud = new Plane(1,1,1,1);
 	        cloud.setDoubleSided(true);
 	        cloud.setTransparent(true);
-	        // cloud.setBlendFunc(GL10.GL_SRC_ALPHA_SATURATE, GL10.GL_ONE_MINUS_SRC_ALPHA); //Night Sky dark clouds
+	        //cloud.setBlendFunc(GL10.GL_SRC_ALPHA_SATURATE, GL10.GL_ONE_MINUS_SRC_ALPHA); //Night Sky dark clouds
 	        cloud.setBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_DST_ALPHA); // bright Sky 
 	        
 	        cloud.setRotation(90,0,90);
@@ -343,31 +392,49 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	        
 	        cloud.setMaterial(cloudMat);
 	        clouds = new Object3D[num];
+	        clouds2 = new Object3D[num];
+	        float scale = 100;
 	        
 	        for ( int i = 0; i < num; i++ ) {
 
 	        	clouds[i] = cloud.clone();
 	        	clouds[i].setDoubleSided(true);
 	        	clouds[i].setColor(0xffffff);
-	        	float scale = 400;
 	        	
-	        	clouds[i].setPosition(-800 + Math.random()*1600, 100+Math.random()*100, -800 + Math.random()*1600);
+	        	
+	        	clouds[i].setPosition(-100 + Math.random()*200, -5+Math.random()*10, -100 + Math.random()*200);
 	        	clouds[i].setRotation(90,0,  Math.random() * i);
 	        	clouds[i].setScale(scale,scale,scale);
 
 	        	getCurrentScene().addChild(clouds[i]);
 	        }
-	    }
+
+	        for ( int i = 0; i < num; i++ ) {
+
+	        	clouds2[i] = clouds[i].clone();
+	        	clouds2[i].setDoubleSided(true);
+	        	clouds2[i].setColor(0xffffff);
+	        	
+	        	clouds2[i].setPosition(clouds[i].getX(),-32, clouds[i].getZ() );
+	        	clouds2[i].setRotation(clouds[i].getRotation());
+	        	clouds2[i].setScale(scale,scale,scale);
+
+	        	getCurrentScene().addChild(clouds2[i]);
+	        }
+	        	
+		}
 		
-		private void createSky(String skyname){
+		private void createSky(String skyname){ 
 			
 			Texture m = new Texture("skymap", R.drawable.atmosphere);
 			
 			Material qm = new Material();
-			sky = new Sphere(800,10,10); 
+			qm.enableLighting(false);
+			sky = new Sphere(100,10,10); 
 			sky.setDoubleSided(true);
 			sky.setRotY(257);
-			sky.setY(-50);
+			
+			sky.setY(-30);
 			qm.setColorInfluence(0);
 			
 			try{
@@ -385,26 +452,37 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		@Override
 		public void onDrawFrame(GL10 glUnused) {
 			super.onDrawFrame(glUnused);
-			
+			time+=.05f;
+			qm.setTime(time);
 			
 		}
 		
 		@Override
-		public void onRender(final double deltaTime) {
+		public void onRender(final double deltaTime) { 
 			target.render(deltaTime);
-			timer=1.f;
+			timer=.1f;
 			rotate=0.01f;
+			
 			if(cloudsEnabled ){
 				mLight.setPosition(empty.getPosition());
 				sky.setRotY(sky.getRotY()+rotate);
 				for (Object3D i : clouds){
 					
-					if (i.getZ() > 100){ i.setZ(i.getZ() - 800);}
+					if (i.getZ() > 200){ i.setZ(i.getZ() - 400);}
+					float position = (float) i.getZ() + timer;
+					i.setZ(position);
+					//i.setY(position);
+				}
+				for (Object3D i : clouds2){
+					
+					if (i.getZ() > 200){ i.setZ(i.getZ() - 400);}
 					float position = (float) i.getZ() + timer;
 					i.setZ(position);
 					//i.setY(position);
 				}
 			}
+			
+			//super.onRender(deltaTime);
 		}
 
 	}
