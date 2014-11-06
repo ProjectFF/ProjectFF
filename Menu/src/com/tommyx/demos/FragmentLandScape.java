@@ -40,6 +40,7 @@ import rajawali.materials.textures.SphereMapTexture;
 import rajawali.materials.textures.Texture;
 import rajawali.materials.textures.VideoTexture;
 import rajawali.math.MathUtil;
+import rajawali.math.Matrix4;
 import rajawali.math.vector.Vector2;
 import rajawali.math.vector.Vector3;
 import rajawali.parser.Loader3DSMax;
@@ -55,6 +56,7 @@ import rajawali.renderer.RajawaliRenderer;
 import rajawali.scene.RajawaliScene;
 import rajawali.terrain.SquareTerrain;
 import rajawali.terrain.TerrainGenerator;
+import rajawali.util.GLU;
 import rajawali.util.MeshExporter;
 import rajawali.util.ObjectColorPicker;
 import rajawali.util.OnObjectPickedListener;
@@ -87,6 +89,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	public PostProcessingManager top;
 	public RajawaliScene bottomscene;
 	public ObjectInputStream ois;
+	public ObjectColorPicker mPicker;
 
 	@Override
 	protected ARenderer createRenderer() {
@@ -122,7 +125,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		return mLayout;
 	}
 	
-	public final class FragmentRenderer extends ARenderer 
+	public final class FragmentRenderer extends ARenderer
 	{
 
 		DirectionalLight mLight, mLight2;
@@ -132,8 +135,8 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		Object3D clouds[], clouds2[];
 		
 		float timer, time, rotate = 0;
-		float maxY = 2.5f;
-		float minY = -29;
+		float maxY = 17.5f;
+		float minY = 0;
 		int numObjects = 0;
 		Material qm;
 		int animcount = 100;
@@ -144,18 +147,18 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		int duration = 600;
 		MediaPlayer sound1; 
 		Object3D flares[];
+		Cube cube;
 		
 		Texture gTexture; 
 		Object3D empty;
 		Object3D world;
-		 
+		
 		float xd,yd, xpos, ypos = 0;
 		
 		Object3D pickedObject;
 		Sphere sky;
 		
 		float oldx, oldy;
-		private PostProcessingManager bottom;
 		
 		public FragmentRenderer(Context main) {
 			super(main);
@@ -164,13 +167,13 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		public void onFingerDown(float x, float y) {
 			yd = (float) getCurrentCamera().getRotY();
 			ypos = (float) world.getRotY();
-		//	xd = (float) getCurrentCamera().getY();
+			xd = (float) getCurrentCamera().getY();
 		}
 		
 		public void onFingerUp(float x, float y){
 			yd = (float) getCurrentCamera().getRotY();
 			ypos = (float) world.getRotY();
-		//	xd = (float) getCurrentCamera().getY();
+			xd = (float) getCurrentCamera().getY();
 		}
 			
 		public void onFingerMove(float x, float y){
@@ -195,16 +198,16 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			if (oldy != y){
 				if (oldy > y) {
 					if (xd > minY){
-						xd -= 0.1f; 
+						xd -= 0.5f; 
 						getCurrentCamera().setY(xd);
 						getCurrentCamera().setLookAt(0,xd,0);
 					}
-					Log.d("posY", Double.toString(getCurrentCamera().getY()));
+					Log.d("posY", Double.toString(getCurrentCamera().getRotY()));
 				}
 				else 
 				{
 					if (xd < maxY){
-						xd += 0.1f; 
+						xd += 0.5f; 
 						getCurrentCamera().setLookAt(0,xd,0);
 						getCurrentCamera().setY(xd);
 					}
@@ -212,31 +215,30 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		}
 			oldy = y;
 			oldx = x;
-			
 		}
 
 		@Override
 		protected void initScene() {
 	
 			super.initScene();
-			//mPicker = new ObjectColorPicker(this);
-			// mPicker.setOnObjectPickedListener(this);
-			
+	
 			world = new Object3D();
 			empty = new Object3D();
 			
 			mLight = new DirectionalLight();
 			mLight.setDirection(0, 0, 0);
-			mLight.setPosition(0,10,0);
+			mLight.setPosition(0,30,0);
 			mLight.setPower(1.5f);
 			
-			getCurrentCamera().setPosition(0, -20,90);
-			getCurrentCamera().setLookAt(0, -20, 0);
-			getCurrentCamera().setFarPlane(200);
+			getCurrentCamera().setPosition(0, 15,120);
+			getCurrentCamera().setRotation(0, -150,0);
+			getCurrentCamera().setLookAt(0, 10, 0);
+			getCurrentCamera().setFarPlane(500);
 			getCurrentCamera().setFieldOfView(70);
-
-			FogParams fp = new FogParams(FogType.LINEAR, 0xffffff, 0, 180);
 			
+			
+			FogParams fp = new FogParams(FogType.LINEAR, 0xffffff, 20, 250);
+		
 			getCurrentScene().setFog(fp);
 			
 			getCurrentScene().addLight(mLight);
@@ -244,16 +246,12 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			//getCurrentScene().setBackgroundColor(0x0000000);
 			
 			//createLensFlares();
-			createSky("open");
-			createScene();
-			createClouds(10); 
+			try{
+				getCurrentScene().setSkybox(R.drawable.atmosphere2, 500);
+			}catch(Exception e){}
 			
-			Cube cube = new Cube(5);
-			Material M = new Material();
-			M.setColor(0);
-			cube.setMaterial(M);
-			cube.setPosition(0,5,0);
-			getCurrentScene().addChild(cube);
+			createScene();
+			createClouds(20); 
 			
 			world.addChild(empty);
 			getCurrentScene().addChild(world);
@@ -267,6 +265,8 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			
 		}
 		
+		
+		
 		public void createScene(){ 
 			
 			qm = new Material(new CustomRawVertexShader(),new CustomRawFragmentShader()); 
@@ -277,7 +277,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			
 			try {
 //			
-//				Loader3DSMax loader = new Loader3DSMax(this,  R.raw.terrain2);
+//				Loader3DSMax loader = new Loader3DSMax(this,  R.raw.terrain);
 //				loader.parse();
 //				Object3D terrain = loader.getParsedObject(); 
 //				
@@ -287,29 +287,29 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 				
 			    ois = new ObjectInputStream(mContext.getResources().openRawResource(R.raw.terrainser));
 			    Object3D terrain = new Object3D((SerializedObject3D) ois.readObject());
-			    
-				Material m = new Material();
+
+			    Material m = new Material();
 				m.enableLighting(true);
 				m.setDiffuseMethod(new DiffuseMethod.Lambert());
-				m.addTexture(new Texture("terrain5", R.drawable.terrain2 ));
-				m.addTexture(new NormalMapTexture("nm", R.drawable.terrain_hm));
+				m.addTexture(new Texture("terrain", R.drawable.terrain2 ));
+				m.addTexture(new NormalMapTexture("terrain_nm", R.drawable.terrain_hm));
 				terrain.setMaterial(m);
 				m.setColorInfluence(0);
 				terrain.setDoubleSided(true);
-				terrain.setScale(7,5,7);
-				terrain.setRotX(90);
-				terrain.setPosition(0,-31,-0);
+				terrain.setScale(10);
+				//terrain.setRotX(90);
+				terrain.setPosition(0, -10,-0);
 				getCurrentScene().addChild(terrain);
 			
 				Plane p = new Plane(300,300,1,1);
 				p.setDoubleSided(true);
 				p.setRotX(90);
 				p.setTransparent(true);
-				p.setPosition(0,-30.0,0);
-				p.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_ONE_MINUS_SRC_ALPHA); // bright Sky 
+				p.setPosition(0,-1.0,0);
+				p.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_SRC_ALPHA); // bright Sky 
 					
 				Texture t = new Texture("water", R.drawable.water);
-				
+				t.setRepeat(3, 3);
 				qm.addTexture(t);
 				
 				p.setMaterial(qm);
@@ -320,8 +320,8 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 				p2.setRotY(180);
 				p2.setRotX(90);
 				p2.setTransparent(true);
-				p2.setPosition(0,-31.1,0);
-				p2.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_SRC_ALPHA); // bright Sky 
+				p2.setPosition(0,-3.0,0);
+				p2.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_ONE_MINUS_SRC_ALPHA); // bright Sky 
 					
 				p2.setMaterial(qm);
 				getCurrentScene().addChild(p2);
@@ -375,7 +375,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	        cloud.setDoubleSided(true);
 	        cloud.setTransparent(true);
 	        //cloud.setBlendFunc(GL10.GL_SRC_ALPHA_SATURATE, GL10.GL_ONE_MINUS_SRC_ALPHA); //Night Sky dark clouds
-	        cloud.setBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_DST_ALPHA); // bright Sky 
+	        //cloud.setBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_DST_ALPHA); // bright Sky 
 	        
 	        cloud.setRotation(90,0,90);
 	        cloud.setPosition(0,20,-10);
@@ -393,7 +393,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	        cloud.setMaterial(cloudMat);
 	        clouds = new Object3D[num];
 	        clouds2 = new Object3D[num];
-	        float scale = 100;
+	        float scale = 75;
 	        
 	        for ( int i = 0; i < num; i++ ) {
 
@@ -402,7 +402,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	        	clouds[i].setColor(0xffffff);
 	        	
 	        	
-	        	clouds[i].setPosition(-100 + Math.random()*200, -5+Math.random()*10, -100 + Math.random()*200);
+	        	clouds[i].setPosition(-100 + Math.random()*200, 20+Math.random()*40, -100 + Math.random()*200);
 	        	clouds[i].setRotation(90,0,  Math.random() * i);
 	        	clouds[i].setScale(scale,scale,scale);
 
@@ -415,38 +415,13 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	        	clouds2[i].setDoubleSided(true);
 	        	clouds2[i].setColor(0xffffff);
 	        	
-	        	clouds2[i].setPosition(clouds[i].getX(),-32, clouds[i].getZ() );
+	        	clouds2[i].setPosition(clouds[i].getX(),-3.0, clouds[i].getZ() );
 	        	clouds2[i].setRotation(clouds[i].getRotation());
-	        	clouds2[i].setScale(scale,scale,scale);
+	        	clouds2[i].setScale(scale-.5,scale-.5,scale-.5);
 
 	        	getCurrentScene().addChild(clouds2[i]);
 	        }
 	        	
-		}
-		
-		private void createSky(String skyname){ 
-			
-			Texture m = new Texture("skymap", R.drawable.atmosphere);
-			
-			Material qm = new Material();
-			qm.enableLighting(false);
-			sky = new Sphere(100,10,10); 
-			sky.setDoubleSided(true);
-			sky.setRotY(257);
-			
-			sky.setY(-30);
-			qm.setColorInfluence(0);
-			
-			try{
-				qm.addTexture(m);
-			}catch(Exception e){
-				
-			}
-			
-			sky.setMaterial(qm);
-			// world.addChild(sky);
-			getCurrentScene().addChild(sky);
-			
 		}
 		
 		@Override
@@ -454,7 +429,6 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			super.onDrawFrame(glUnused);
 			time+=.05f;
 			qm.setTime(time);
-			
 		}
 		
 		@Override
@@ -464,10 +438,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			rotate=0.01f;
 			
 			if(cloudsEnabled ){
-				mLight.setPosition(empty.getPosition());
-				sky.setRotY(sky.getRotY()+rotate);
 				for (Object3D i : clouds){
-					
 					if (i.getZ() > 200){ i.setZ(i.getZ() - 400);}
 					float position = (float) i.getZ() + timer;
 					i.setZ(position);
@@ -484,6 +455,6 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			
 			//super.onRender(deltaTime);
 		}
-
+		
 	}
 }

@@ -18,7 +18,7 @@ public boolean fragmentFinished = false;
 			requestWindowFeature(Window.FEATURE_NO_TITLE);
         	super.onCreate(savedInstanceState);
 	        setContentView(R.layout.rajawali_fragment);
-	        launchFragment(new FragmentMenu());
+	        launchFragment(new FragmentLandScape());
 	        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 		 			 			 WindowManager.LayoutParams.FLAG_FULLSCREEN);
       
