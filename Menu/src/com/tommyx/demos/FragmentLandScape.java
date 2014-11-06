@@ -22,6 +22,7 @@ import rajawali.animation.EllipticalOrbitAnimation3D;
 import rajawali.animation.RotateAnimation3D;
 import rajawali.animation.RotateOnAxisAnimation;
 import rajawali.animation.SplineTranslateAnimation3D;
+import rajawali.animation.TranslateAnimation3D;
 import rajawali.animation.mesh.SkeletalAnimationObject3D;
 import rajawali.curves.CatmullRomCurve3D;
 import rajawali.lights.DirectionalLight;
@@ -29,6 +30,7 @@ import rajawali.lights.PointLight;
 import rajawali.materials.Material;
 import rajawali.materials.methods.DiffuseMethod;
 import rajawali.materials.methods.SpecularMethod;
+import rajawali.materials.plugins.SpriteSheetMaterialPlugin;
 import rajawali.materials.plugins.FogMaterialPlugin.FogParams;
 import rajawali.materials.plugins.FogMaterialPlugin.FogType;
 import rajawali.materials.textures.ATexture;
@@ -77,6 +79,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnTouchListener;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -90,7 +93,8 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	public RajawaliScene bottomscene;
 	public ObjectInputStream ois;
 	public ObjectColorPicker mPicker;
-
+	SpriteSheetMaterialPlugin spriteSheet = new SpriteSheetMaterialPlugin(5, 4, 45, 20);
+	
 	@Override
 	protected ARenderer createRenderer() {
 		return new FragmentRenderer(getActivity());
@@ -132,11 +136,12 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 		private PostProcessingManager target;
 		//Plane line0[];
 		private boolean cloudsEnabled = true;
-		Object3D clouds[], clouds2[];
+		Object3D clouds[], clouds2[], birds[];
 		
 		float timer, time, rotate = 0;
-		float maxY = 17.5f;
-		float minY = 0;
+		float maxY = 27.5f;
+		int numBirds = 20;
+		float minY = 5;
 		int numObjects = 0;
 		Material qm;
 		int animcount = 100;
@@ -230,10 +235,10 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			mLight.setPosition(0,30,0);
 			mLight.setPower(1.5f);
 			
-			getCurrentCamera().setPosition(0, 15,120);
+			getCurrentCamera().setPosition(0, 15,160);
 			getCurrentCamera().setRotation(0, -150,0);
 			getCurrentCamera().setLookAt(0, 10, 0);
-			getCurrentCamera().setFarPlane(500);
+			getCurrentCamera().setFarPlane(1000);
 			getCurrentCamera().setFieldOfView(70);
 			
 			
@@ -247,12 +252,12 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			
 			//createLensFlares();
 			try{
-				getCurrentScene().setSkybox(R.drawable.atmosphere2, 500);
+				getCurrentScene().setSkybox(R.drawable.atmosphere2, 1000);
 			}catch(Exception e){}
 			
 			createScene();
 			createClouds(20); 
-			
+			addBirds();
 			world.addChild(empty);
 			getCurrentScene().addChild(world);
 			
@@ -265,7 +270,41 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			
 		}
 		
-		
+		private void addBirds(){
+			
+			birds = new Object3D[numBirds];
+			
+			Plane p = new Plane(15,15,1,1);
+			p.setTransparent(true);
+			p.setDoubleSided(true);
+			p.setRotX(0);
+			Material material = new Material();
+			material.setColorInfluence(0);
+			
+			try {
+				
+				material.addTexture(new Texture("flickrPics", R.drawable.image1));
+				material.setColorInfluence(0);
+			} catch (TextureException e) {
+				e.printStackTrace();
+			}
+			
+			spriteSheet.play();
+			material.addPlugin(spriteSheet);
+			p.setMaterial(material);
+			
+	        for ( int i = 0; i < numBirds; i++ ) {
+	        	
+	        	birds[i] = p.clone();
+				birds[i].setTransparent(true);
+				birds[i].setDoubleSided(true);
+				birds[i].setRotY(90);
+				birds[i].setMaterial(material);
+				birds[i].setPosition(-100 + Math.random()*200, 0+Math.random()*50, -100 + Math.random()*200);
+				getCurrentScene().addChild(birds[i]);
+	        }
+			
+        }
 		
 		public void createScene(){ 
 			
@@ -284,9 +323,9 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 //				MeshExporter exp = new MeshExporter(terrain);
 //				SerializationExporter s = new SerializationExporter();
 //				exp.export("terrain", s.getClass());
-				
+//				
 			    ois = new ObjectInputStream(mContext.getResources().openRawResource(R.raw.terrainser));
-			    Object3D terrain = new Object3D((SerializedObject3D) ois.readObject());
+				Object3D terrain = new Object3D((SerializedObject3D) ois.readObject());
 
 			    Material m = new Material();
 				m.enableLighting(true);
@@ -305,8 +344,8 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 				p.setDoubleSided(true);
 				p.setRotX(90);
 				p.setTransparent(true);
-				p.setPosition(0,-1.0,0);
-				p.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_SRC_ALPHA); // bright Sky 
+				p.setPosition(0,-3.0,0);
+				p.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_ONE_MINUS_SRC_ALPHA); // bright Sky 
 					
 				Texture t = new Texture("water", R.drawable.water);
 				t.setRepeat(3, 3);
@@ -320,8 +359,8 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 				p2.setRotY(180);
 				p2.setRotX(90);
 				p2.setTransparent(true);
-				p2.setPosition(0,-3.0,0);
-				p2.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_ONE_MINUS_SRC_ALPHA); // bright Sky 
+				p2.setPosition(0,-1.0,0);
+				p2.setBlendFunc(GL10.GL_SRC_COLOR, GL10.GL_SRC_ALPHA); // bright Sky 
 					
 				p2.setMaterial(qm);
 				getCurrentScene().addChild(p2);
@@ -415,7 +454,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	        	clouds2[i].setDoubleSided(true);
 	        	clouds2[i].setColor(0xffffff);
 	        	
-	        	clouds2[i].setPosition(clouds[i].getX(),-3.0, clouds[i].getZ() );
+	        	clouds2[i].setPosition(clouds[i].getX(),-1.0, clouds[i].getZ() );
 	        	clouds2[i].setRotation(clouds[i].getRotation());
 	        	clouds2[i].setScale(scale-.5,scale-.5,scale-.5);
 
@@ -448,6 +487,13 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 					
 					if (i.getZ() > 200){ i.setZ(i.getZ() - 400);}
 					float position = (float) i.getZ() + timer;
+					i.setZ(position);
+					//i.setY(position);
+				}
+				for (Object3D i : birds){
+					
+					if (i.getZ() > 200){ i.setZ(i.getZ() - 400);}
+					float position = (float) i.getZ() + timer*10;
 					i.setZ(position);
 					//i.setY(position);
 				}

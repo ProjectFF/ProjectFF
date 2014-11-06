@@ -10,7 +10,7 @@ void main() {
 
      const float twopi = 3.141592653589 * 2.0;
 
-	 float f = sin(uTime*0.01); 
+	 float f = sin(uTime*0.1); 
 	 float f1 = cos(-uTime*0.1);
 	 
 	 float intensity = 2.0;	 
