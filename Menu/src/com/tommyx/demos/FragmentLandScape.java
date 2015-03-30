@@ -252,7 +252,7 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 			
 			//createLensFlares();
 			try{
-				getCurrentScene().setSkybox(R.drawable.atmosphere2, 1000);
+				getCurrentScene().setSkybox(R.drawable.atmosphere2);
 			}catch(Exception e){}
 			
 			createScene();
@@ -414,14 +414,14 @@ public class FragmentLandScape extends AFragment implements OnTouchListener {
 	        cloud.setDoubleSided(true);
 	        cloud.setTransparent(true);
 	        //cloud.setBlendFunc(GL10.GL_SRC_ALPHA_SATURATE, GL10.GL_ONE_MINUS_SRC_ALPHA); //Night Sky dark clouds
-	        //cloud.setBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_DST_ALPHA); // bright Sky 
+	        cloud.setBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_DST_ALPHA); // bright Sky 
 	        
 	        cloud.setRotation(90,0,90);
 	        cloud.setPosition(0,20,-10);
 	        Texture texture = new Texture("cloud", R.drawable.cloud2);
 	        Material cloudMat = new Material(); 
-	        cloudMat.setColorInfluence(.50f);
-	        cloudMat.setAmbientIntensity(2, 2, 2);
+	        cloudMat.setColorInfluence(.00f);
+	        //cloudMat.setAmbientIntensity(2, 2, 2);
 	        
 	        try{
 	        	cloudMat.addTexture(texture);

@@ -1,5 +1,7 @@
 package com.tommyx.demos;
 
+import java.util.Random;
+
 import javax.microedition.khronos.opengles.GL10;
 
 import com.tommyx.demos.R;
@@ -55,7 +57,7 @@ import android.view.View.OnTouchListener;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 
-public class FragmentMenu extends AFragment implements OnTouchListener {
+public class FragmentNightMenu extends AFragment implements OnTouchListener {
 
 	@Override
 	protected ARenderer createRenderer() {
@@ -98,9 +100,13 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 		Object3D clouds[];
 		
 		float timer, rotate = 0;
+		float position =0;
 		int numObjects = 0;
 		
 		int animcount = 100;
+		float maxY = 30; 
+		float minY = -2;
+				
 		int linecounter = 0;
 		boolean counterset = false;
 		int counter = 0;
@@ -113,7 +119,7 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 		Object3D nullObject;
 		float xd,yd, xpos, ypos = 0;
 		private ObjectColorPicker mPicker;
-		
+		Random random = new Random();
 		Object3D pickedObject;
 		Sphere sky;
 		
@@ -124,62 +130,57 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 		}
 		
 		public void onFingerDown(float x, float y) {
-			
-			if (nullObject.getNumChildren()>0){
-				yd = (float) nullObject.getRotY();
-				xd = (float) nullObject.getRotX();
-			}
-			mPicker.getObjectAt(x, y);
+			yd = (float) getCurrentCamera().getRotY();
+			xd = (float) getCurrentCamera().getY();
 		}
 		
 		public void onFingerUp(float x, float y){
-			yd = (float) nullObject.getRotY();
+			yd = (float) getCurrentCamera().getRotY();
+			xd = (float) getCurrentCamera().getY();
 		}
-			
+		
 		public void onFingerMove(float x, float y){
-			Log.d("sky",Double.toString(sky.getRotY()));
+			
 			if (oldx != x){
-				if (oldx > x) {
-					yd += 1.5f; 
-					nullObject.setRotY(yd);
+				if (oldx > x) { 
+					yd -= 1.5f; 
+					ypos -= 1.5f;
+					getCurrentCamera().setRotY(yd);
 				}
 				else 
 				{
-					yd-= 1.5f;
-					nullObject.setRotY(yd);
+					yd+= 1.5f;
+					ypos += 1.5f;
+					getCurrentCamera().setRotY(yd);
 				}
 			}
 			if (oldy != y){
 				if (oldy > y) {
-					xd += 0.1f; 
-					nullObject.setRotX(xd);
+					if (xd > minY){
+						xd -= 0.5f; 
+						getCurrentCamera().setY(xd);
+						getCurrentCamera().setLookAt(0,xd,0);
+					}
+					Log.d("posY", Double.toString(getCurrentCamera().getRotY()));
 				}
 				else 
 				{
-					xd-= 0.1f;
-					nullObject.setRotX(xd);
+					if (xd < maxY){
+						xd += 0.5f; 
+						getCurrentCamera().setLookAt(0,xd,0);
+						getCurrentCamera().setY(xd);
+					}
 				}
-			}
+		}
 			oldy = y;
 			oldx = x;
-			
 		}
 			
 		@Override 
 		public void onObjectPicked(Object3D object) {
 			
 			Log.d("Name", object.getName());
-			
-			if (object.getName() == "btn_ls_demo.png") 
-				Log.d("HIT", "hit");
-				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-			if (object.getName() == "btn_rs_demo.png") 
-				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-			if (object.getName() == "btn_sc_demo.png") 
-				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-			if (object.getName() == "btn_ar_demo.png") 
-				((MenuActivity) mContext).launchFragment(new FragmentLandScape());
-		}
+			}
 	
 		
 		@Override
@@ -210,111 +211,25 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 			//getCurrentScene().setFog(new FogParams(FogType.LINEAR, 0xffffff, 10, 800));
 			
 			createSky("open");
-			createClouds(20);
-			createScene();
+			createClouds(10);
 			half_widht =  mViewportWidth / 2;
 		}
 		
-		private void createScene(){
-			float sFactor = 20;
-			int numButtons = 4;
-			int[] texts = new int[]{
-				R.drawable.btn_sc_demo,
-				R.drawable.btn_ls_demo,
-				R.drawable.btn_rs_demo,
-				R.drawable.btn_ar_demo,
-			};
-			
- 			buttons = new Plane[numButtons];
-			nullObject = new Object3D();
-			nullObject.setDoubleSided(true);
-			Material nullMat = new Material();
-			nullObject.setMaterial(nullMat);
-			
-			int count = 0; 
-			
-			for (int i=0;i<360; i+=360/numButtons){
-			
-			double posx = Math.cos(Math.toRadians(i));
-			double posz = Math.sin(Math.toRadians(i));
-				
-			if (i!=0) count = i/90;
-			
-			buttons[count] = new Plane(0.5f*sFactor,.5f*sFactor,1,1);
-			
-			Material m = new Material();
-			
-			buttons[count].setDoubleSided(true);
-			buttons[count].setTransparent(true);
-			//m.enableLighting(true);
-			//m.setDiffuseMethod(new DiffuseMethod.Lambert());
-			m.setColorInfluence(0.0f);
-			
-			try{
-				m.addTexture(new Texture("text",texts[count]));
-				m.addTexture(new Texture("glowmap",R.drawable.btn_back));
-			}catch(TextureException e){
-				e.printStackTrace();
-			}
-			
-				String id = getContext().getResources().getString(texts[count]);
-				String[] subs = id.split("/");
-				for (String s: subs)
-					id = s;
-				buttons[count].setName(id);
-				Log.d("NAMES", buttons[count].getName());
-				buttons[count].setColor(0xffffff);
-				buttons[count].setMaterial(m);
-				buttons[count].setRotation(0,-270+i,0);
-				buttons[count].setPosition(posx*sFactor, -8f, posz*sFactor);
-				nullObject.addChild(buttons[count]);
-			}
-				nullObject.setRotX(25);
-				for(int i = 0; i<nullObject.getNumChildren(); i++){
-					mPicker.registerObject(nullObject.getChildAt(i));
-					//getCurrentScene().addChild(nullObject.getChildAt(i));	
-				}
-				getCurrentScene().addChild(nullObject);
-				
-		}
-		
-		public void createLensFlares(){
-			
-		}
-		
-		public Bitmap textAsBitmap(String text) 
-		{
-			Bitmap mScoreBitmap = Bitmap.createBitmap(256, 256, Config.ARGB_8888);
-			
-			Canvas mScoreCanvas = new Canvas(mScoreBitmap);
-			Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-			mTextPaint.setColor(Color.WHITE);
-			mTextPaint.setTextSize(50);
-			mTextPaint.setTypeface(Typeface.MONOSPACE);
-			
-			mScoreCanvas.drawColor(0, Mode.CLEAR);
-			
-			mScoreCanvas.drawText(text, 80,
-					148, mTextPaint);
-			
-			return mScoreBitmap;
-	    }
-			
 		
 		private void createClouds(int num){
 
 		    Plane cloud = new Plane(1,1,1,1);
 	        cloud.setDoubleSided(true);
 	        cloud.setTransparent(true);
-	        // cloud.setBlendFunc(GL10.GL_SRC_ALPHA_SATURATE, GL10.GL_ONE_MINUS_SRC_ALPHA); //Night Sky dark clouds
-	        cloud.setBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_DST_ALPHA); // bright Sky 
-	        
+	       // cloud.setBlendFunc(GL10.GL_SRC_ALPHA_SATURATE, GL10.GL_ONE_MINUS_SRC_ALPHA); //Night Sky dark clouds
+	       // cloud.setBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_DST_ALPHA); // bright Sky 
+	        cloud.setBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_COLOR); // bright Sky
 	        cloud.setRotation(90,0,90);
 	        cloud.setPosition(0,20,-10);
-	        Texture texture = new Texture("cloud", R.drawable.cloud2);
+	        Texture texture = new Texture("cloud", R.drawable.fog);
 	        Material cloudMat = new Material(); 
-	        cloudMat.setColorInfluence(0.00f);
-	        //cloudMat.setAmbientIntensity(2, 2, 2);
+	        cloudMat.setColorInfluence(.50f);
+	        cloudMat.setAmbientIntensity(2, 2, 2);
 	        
 	        try{
 	        	cloudMat.addTexture(texture);
@@ -329,11 +244,12 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 
 	        	clouds[i] = cloud.clone();
 	        	clouds[i].setDoubleSided(true);
-	        	clouds[i].setColor(0xffffff);
-	        	float scale = 200;
+//	        	float hsv[] = new float[] { random.nextFloat(),0.0f,1.0f};
+//	        	clouds[i].setColor(Color.HSVToColor(hsv));
+	        	float scale = 500;
 	        	
-	        	clouds[i].setPosition(-250 + Math.random()*500, 50+Math.random()*100, -500 + Math.random()*1000);
-	        	clouds[i].setRotation(0,0,  Math.random() * i);
+	        	clouds[i].setPosition(-500 + Math.random()*1000, -500+Math.random()*1000, -500 + Math.random()*250);
+	        	clouds[i].setRotation(0,0, i*30* Math.random() * 100);
 	        	clouds[i].setScale(scale,scale,scale);
 
 	        	getCurrentScene().addChild(clouds[i]);
@@ -342,13 +258,13 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 		
 		private void createSky(String skyname){
 			
-			Texture m = new Texture("skymap", R.drawable.atmosphere);
+			Texture m = new Texture("skymap", R.drawable.atmosphere_night);
 			
 			Material qm = new Material();
 			sky = new Sphere(800,10,10); 
 			sky.setDoubleSided(true);
-			sky.setRotY(257);
-			sky.setRotX(23);
+			sky.setRotY(42);
+			//sky.setRotX(23);
 			qm.setColorInfluence(0);
 			
 			try{
@@ -366,16 +282,27 @@ public class FragmentMenu extends AFragment implements OnTouchListener {
 		public void onDrawFrame(GL10 glUnused) {
 			super.onDrawFrame(glUnused);
 			timer=0.1f;
+			float timer2 = 0.2f;
+			float timer3 = 0.3f;
 			rotate=0.01f;
 			sky.setRotY(sky.getRotY()+rotate);
 			if(cloudsEnabled ){
 				
 				for (Object3D i : clouds){
 					
-					if (i.getZ() > 100){ i.setZ(i.getZ() - -500);}
-					float position = (float) i.getZ() + timer;
-					i.setZ(position);
-					//i.setY(position);
+					if (i.getY() > 1000){ i.setY(i.getY() -2000);}
+					if (i.getZ() < -250){
+						position = (float) i.getY() + timer3;
+					}
+					if (i.getZ() > -250 && i.getZ() < -150){								
+						position = (float) i.getY() + timer2;
+					}
+					if (i.getZ() > -150){								
+						position = (float) i.getY() + timer;
+					}
+					i.setY(position);
+					i.setRotZ(rotate*10);
+					
 				}
 			}
 			
