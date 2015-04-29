@@ -5,6 +5,8 @@ package projectff.mycardboardview;
  */
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import org.rajawali3d.cardboard.RajawaliCardboardRenderer;
 import org.rajawali3d.lights.DirectionalLight;
@@ -16,8 +18,10 @@ import org.rajawali3d.primitives.Sphere;
 
 public class MyCardboardRenderer extends RajawaliCardboardRenderer {
 
-    public MyCardboardRenderer(Context context) {
-        super(context);
+    String SpheremapPath = "";
+
+    public MyCardboardRenderer(Context context, String spheremapPath) {
+        super(context); SpheremapPath = spheremapPath;
     }
 
     @Override
@@ -27,7 +31,9 @@ public class MyCardboardRenderer extends RajawaliCardboardRenderer {
         light.setPosition(0,10,10);
         getCurrentScene().addLight(light);
 
-        Sphere sphere = createPhotoSphereWithTexture(new Texture("photo", R.drawable.pano4));
+        Bitmap b = BitmapFactory.decodeFile(SpheremapPath);
+
+        Sphere sphere = createPhotoSphereWithTexture(new Texture("photo",b));
 
         getCurrentScene().addChild(sphere);
         getCurrentCamera().setFarPlane(2000 );
