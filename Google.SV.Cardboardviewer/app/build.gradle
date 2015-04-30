@@ -1,9 +1,16 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        config {
+            keyAlias 'tommyx'
+            storeFile file('C:/Users/meyert/android-keystore.jks')
+            storePassword 'hn8cM9Kf5up2'
+            keyPassword 'hn8cM9Kf5up2'
+        }
+    }
     compileSdkVersion 22
     buildToolsVersion "22.0.1"
-
     defaultConfig {
         applicationId "projectff.googlesvcardboardviewer"
         minSdkVersion 21
@@ -15,6 +22,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.config
         }
     }
 }

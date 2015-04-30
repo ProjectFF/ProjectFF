@@ -6,4 +6,14 @@
         android:title="@string/action_settings"
         android:orderInCategory="100"
         android:showAsAction="never" />
+    <item android:id="@+id/action_normal" android:title="@string/action_normal"
+        android:orderInCategory="101" android:showAsAction="ifRoom" />
+    <item android:id="@+id/action_terrain" android:title="@string/action_terrain"
+        android:orderInCategory="103" android:showAsAction="ifRoom" />
+    <item android:id="@+id/action_hybrid" android:title="@string/action_hybrid"
+        android:orderInCategory="102" android:showAsAction="ifRoom" />
+    <item android:id="@+id/action_satellite" android:title="@string/action_satellite"
+        android:orderInCategory="104" android:showAsAction="ifRoom" />
+    <item android:id="@+id/action_cardboard" android:title="@string/action_cardboard"
+        android:orderInCategory="105" android:showAsAction="never" />
 </menu>
